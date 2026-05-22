@@ -1,0 +1,6 @@
+result = foo( 1,  2 )
+<<<<<<< HEAD
+value = bar( 3,4 )
+=======
+value = bar(3, 4)
+>>>>>>> origin/main
