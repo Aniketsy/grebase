@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 
-from .branch_detector import detect_target_branch
+from .branch_detector import detect_target_branch, select_remote
 from .config import GrebaseConfig
 from .conflict_classifier import LOCKFILES
 from .conflict_detector import get_conflict_files
@@ -52,6 +52,11 @@ def main(
         help="Prompt for unresolved conflicts (default: on)",
     ),
     safe_only: bool = typer.Option(False, "--safe-only"),
+    remote: str = typer.Option(
+        "auto",
+        "--remote",
+        help="Remote to rebase against (auto|origin|upstream|<name>)",
+    ),
     policy: str = typer.Option(
         "prompt",
         "--policy",
@@ -70,6 +75,7 @@ def main(
             dry_run=dry_run,
             interactive=interactive,
             safe_only=safe_only,
+            remote=remote,
             policy=policy,
             verbose=verbose,
         )
@@ -84,6 +90,7 @@ def run_workflow(
     dry_run: bool = False,
     interactive: bool = True,
     safe_only: bool = False,
+    remote: str = "auto",
     policy: str = "prompt",
     verbose: bool = False,
 ) -> int:
@@ -121,7 +128,8 @@ def run_workflow(
         return 1
 
     current_branch = get_current_branch(repo_path)
-    target_branch = detect_target_branch(repo_path, target)
+    selected_remote = select_remote(repo_path, preferred=remote)
+    target_branch = detect_target_branch(repo_path, target, remote=selected_remote)
     config = GrebaseConfig(
         repo_path=repo_path,
         target=target_branch,
@@ -134,6 +142,8 @@ def run_workflow(
     console.print("[green]✓[/green] Repository detected")
     console.print(f"[green]✓[/green] Current branch: {current_branch}")
     console.print(f"[green]✓[/green] Target branch: {target_branch}")
+    if selected_remote:
+        console.print(f"[green]✓[/green] Remote: {selected_remote}")
 
     summary = diff_stat_range(repo_path, target_branch)
     if summary:
@@ -144,8 +154,8 @@ def run_workflow(
         console.print("[yellow]![/yellow] Resuming rebase with conflicts")
     elif config.dry_run:
         console.print("[yellow]![/yellow] Dry run - skipping fetch")
-    elif has_remote(repo_path):
-        fetch(repo_path)
+    elif selected_remote and has_remote(repo_path, remote=selected_remote):
+        fetch(repo_path, remote=selected_remote)
         console.print("[green]✓[/green] Fetch completed")
     else:
         console.print("[yellow]![/yellow] No remote found - skipping fetch")
@@ -246,6 +256,11 @@ def run(
         help="Prompt for unresolved conflicts (default: on)",
     ),
     safe_only: bool = typer.Option(False, "--safe-only"),
+    remote: str = typer.Option(
+        "auto",
+        "--remote",
+        help="Remote to rebase against (auto|origin|upstream|<name>)",
+    ),
     policy: str = typer.Option(
         "prompt",
         "--policy",
@@ -262,6 +277,7 @@ def run(
         dry_run=dry_run,
         interactive=interactive,
         safe_only=safe_only,
+        remote=remote,
         policy=policy,
         verbose=verbose,
     )

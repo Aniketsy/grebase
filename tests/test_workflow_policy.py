@@ -14,8 +14,9 @@ def _setup_workflow_mocks(
 
     monkeypatch.setattr(cli, "ensure_git_repo", lambda *_: None)
     monkeypatch.setattr(cli, "get_current_branch", lambda *_: "feature")
-    monkeypatch.setattr(cli, "detect_target_branch", lambda *_: "main")
+    monkeypatch.setattr(cli, "detect_target_branch", lambda *_args, **_kwargs: "main")
     monkeypatch.setattr(cli, "has_remote", lambda *_: False)
+    monkeypatch.setattr(cli, "select_remote", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(cli, "fetch", lambda *_: None)
     monkeypatch.setattr(cli, "rebase", lambda *_: None)
     monkeypatch.setattr(cli, "diff_stat_range", lambda *_: "")

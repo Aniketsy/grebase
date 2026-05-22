@@ -1,6 +1,18 @@
 # grebase
 
+```
+	 ____ _ ____  ____   ___  ____  _____
+	/ ___| |  _ \|  _ \ / _ \| __ )| ____|
+ | |  _| | |_) | |_) | | | |  _ \|  _|  
+ | |_| | |  _ <|  _ <| |_| | |_) | |___ 
+	\____|_|_| \_\_| \_\\___/|____/|_____|
+```
+
 Safe, rule-based Git rebase assistant for terminal-first workflows.
+
+[![CI](/actions/workflows/ci.yml/badge.svg)](/actions/workflows/ci.yml)
+
+**Status:** Active development (early-stage, expect changes)
 
 ## Overview
 Grebase automates the safe parts of a rebase and prompts only when a decision
@@ -27,10 +39,7 @@ grebase main
 grebase origin/main
 grebase run main
 ```
-
-### Commands and Options
-- `run` explicit subcommand (grebase defaults to this)
-- `--continue` resume an in-progress rebase
+- `--remote` select remote to rebase against (auto|origin|upstream|<name>)
 - `--abort` abort the rebase
 - `--skip` skip the current commit
 - `--status` show porcelain status
@@ -39,6 +48,13 @@ grebase run main
 - `--safe-only` only apply safe auto-resolutions
 - `--policy` default policy for ambiguous conflicts: prompt, current, incoming
 - `--verbose` verbose logging
+
+## Configuration
+Common flags for behavior control:
+
+- `--policy prompt|current|incoming` sets the default resolution for ambiguous conflicts.
+- `--safe-only` only applies deterministic auto-resolutions (never semantic guesses).
+- `--non-interactive` disables prompts and exits when a decision is required.
 
 ## Supported Conflict Types
 - Import conflicts (merge unique import lines)
@@ -67,8 +83,19 @@ before rebasing to help you review incoming changes.
 - Log decisions clearly
 - Always allow abort and manual resolution
 
+## Troubleshooting
+- **Dirty working tree**: commit or stash your changes, then rerun `grebase`.
+- **Rebase already in progress**: use `grebase --continue`, `grebase --abort`, or `grebase --skip`.
+- **Lockfile tool missing**: install the required package manager or resolve manually.
+
 ## Contributing
-See [docs/contributing.md](docs/contributing.md) for setup, standards, and tests.
+Welcome, contributors! We would love your help.
+
+- Start here: [docs/contributing.md](docs/contributing.md)
+- Add tests for any new behavior
+- Keep changes small, clear, and safe
+
+Grebase is in active development, so feedback and PRs are especially valuable.
 
 ## License
 MIT. See [LICENSE](LICENSE).
