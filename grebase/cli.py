@@ -6,6 +6,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 
+from .audit_log import append_audit
 from .branch_detector import detect_target_branch, select_remote
 from .config import GrebaseConfig
 from .conflict_classifier import LOCKFILES
@@ -62,6 +63,7 @@ def main(
         "--policy",
         help="Ambiguous conflict policy: prompt, current, incoming",
     ),
+    audit: bool = typer.Option(False, "--audit", help="Write audit log to .git/grebase.log"),
     verbose: bool = typer.Option(False, "--verbose"),
 ) -> None:
     if ctx.invoked_subcommand is None:
@@ -77,6 +79,7 @@ def main(
             safe_only=safe_only,
             remote=remote,
             policy=policy,
+            audit=audit,
             verbose=verbose,
         )
 
@@ -92,6 +95,7 @@ def run_workflow(
     safe_only: bool = False,
     remote: str = "auto",
     policy: str = "prompt",
+    audit: bool = False,
     verbose: bool = False,
 ) -> int:
     repo_path = Path.cwd()
@@ -103,17 +107,24 @@ def run_workflow(
         console.print(f"[red]x[/red] {exc}")
         return 1
 
+    def audit_log(action: str, detail: str) -> None:
+        if audit:
+            append_audit(repo_path, action, detail)
+
     if continue_flag:
         rebase_continue(repo_path)
         console.print("[green]✓[/green] Rebase continued")
+        audit_log("continue", "rebase --continue")
         return 0
     if abort_flag:
         rebase_abort(repo_path)
         console.print("[yellow]![/yellow] Rebase aborted")
+        audit_log("abort", "rebase --abort")
         return 0
     if skip_flag:
         rebase_skip(repo_path)
         console.print("[yellow]![/yellow] Rebase skipped")
+        audit_log("skip", "rebase --skip")
         return 0
     if status_flag:
         console.print(status_porcelain(repo_path) or "clean")
@@ -144,6 +155,9 @@ def run_workflow(
     console.print(f"[green]✓[/green] Target branch: {target_branch}")
     if selected_remote:
         console.print(f"[green]✓[/green] Remote: {selected_remote}")
+        audit_log("target", f"remote={selected_remote} target={target_branch}")
+    else:
+        audit_log("target", f"target={target_branch}")
 
     summary = diff_stat_range(repo_path, target_branch)
     if summary:
@@ -152,25 +166,31 @@ def run_workflow(
 
     if rebase_in_progress:
         console.print("[yellow]![/yellow] Resuming rebase with conflicts")
+        audit_log("resume", "rebase in progress")
     elif config.dry_run:
         console.print("[yellow]![/yellow] Dry run - skipping fetch")
+        audit_log("dry-run", "skip fetch/rebase")
     elif selected_remote and has_remote(repo_path, remote=selected_remote):
         fetch(repo_path, remote=selected_remote)
         console.print("[green]✓[/green] Fetch completed")
+        audit_log("fetch", f"remote={selected_remote}")
     else:
         console.print("[yellow]![/yellow] No remote found - skipping fetch")
+        audit_log("fetch", "skipped (no remote)")
 
     if not rebase_in_progress:
         save_state(repo_path, current_branch, target_branch)
 
     if not config.dry_run and not rebase_in_progress:
         rebase(repo_path, target_branch)
+        audit_log("rebase", f"target={target_branch}")
 
     batch_choice: str | None = None
     while True:
         conflict_files = get_conflict_files(repo_path)
         if not conflict_files:
             console.print("[green]✓[/green] Rebase successful")
+            audit_log("success", "rebase completed")
             return 0
 
         resolved_files: list[str] = []
@@ -180,6 +200,7 @@ def run_workflow(
             if resolved:
                 resolved_files.append(conflict_file)
                 console.print(f"[green]✓[/green] Auto-resolved {conflict_file}")
+                audit_log("auto-resolve", conflict_file)
                 continue
 
             if not config.interactive and policy != "prompt":
@@ -188,6 +209,7 @@ def run_workflow(
                 console.print(
                     f"[green]✓[/green] Applied {policy} to {conflict_file}"
                 )
+                audit_log("policy", f"{policy} {conflict_file}")
                 continue
 
             if not config.interactive:
@@ -208,25 +230,32 @@ def run_workflow(
             if action == "1":
                 resolve_with_choice(repo_path, conflict_file, "current")
                 resolved_files.append(conflict_file)
+                audit_log("choice", f"current {conflict_file}")
             elif action == "2":
                 resolve_with_choice(repo_path, conflict_file, "incoming")
                 resolved_files.append(conflict_file)
+                audit_log("choice", f"incoming {conflict_file}")
             elif action == "3":
                 batch_choice = "3"
                 resolve_with_choice(repo_path, conflict_file, "current")
                 resolved_files.append(conflict_file)
+                audit_log("choice", f"current-all {conflict_file}")
             elif action == "4":
                 batch_choice = "4"
                 resolve_with_choice(repo_path, conflict_file, "incoming")
                 resolved_files.append(conflict_file)
+                audit_log("choice", f"incoming-all {conflict_file}")
             elif action == "5":
                 console.print(diff_file(repo_path, conflict_file))
+                audit_log("diff", conflict_file)
                 return 2
             elif action == "6":
                 rebase_skip(repo_path)
+                audit_log("skip", "rebase --skip")
                 return 2
             elif action == "7":
                 rebase_abort(repo_path)
+                audit_log("abort", "rebase --abort")
                 return 1
             else:
                 console.print("Invalid selection")
@@ -266,6 +295,7 @@ def run(
         "--policy",
         help="Ambiguous conflict policy: prompt, current, incoming",
     ),
+    audit: bool = typer.Option(False, "--audit", help="Write audit log to .git/grebase.log"),
     verbose: bool = typer.Option(False, "--verbose"),
 ) -> None:
     exit_code = run_workflow(
@@ -279,6 +309,7 @@ def run(
         safe_only=safe_only,
         remote=remote,
         policy=policy,
+        audit=audit,
         verbose=verbose,
     )
     raise typer.Exit(code=exit_code)

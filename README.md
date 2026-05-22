@@ -39,6 +39,7 @@ grebase run main
 - `--interactive/--non-interactive` prompt for unresolved conflicts (default: on)
 - `--safe-only` only apply safe auto-resolutions
 - `--policy` default policy for ambiguous conflicts: prompt, current, incoming
+- `--audit` write audit log to `.git/grebase.log`
 - `--verbose` verbose logging
 
 ## Configuration
@@ -74,6 +75,10 @@ before rebasing to help you review incoming changes.
 - Preserve Git workflow compatibility
 - Log decisions clearly
 - Always allow abort and manual resolution
+
+## Audit Log
+Use `--audit` to write a trail to `.git/grebase.log` with decisions and actions
+taken during a rebase.
 
 ## Troubleshooting
 - **Dirty working tree**: commit or stash your changes, then rerun `grebase`.

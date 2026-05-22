@@ -64,7 +64,10 @@ def classify_conflict(file_path: str, segments: list[Segment]) -> ConflictType:
     if not conflict_segments:
         return ConflictType.SEMANTIC
 
-    if all(_is_import_block(seg.current) and _is_import_block(seg.incoming) for seg in conflict_segments):
+    if all(
+        _is_import_block(seg.current) and _is_import_block(seg.incoming)
+        for seg in conflict_segments
+    ):
         return ConflictType.IMPORTS
     if all(_is_duplicate(seg.current, seg.incoming) for seg in conflict_segments):
         return ConflictType.DUPLICATE

@@ -1,0 +1,5 @@
+<<<<<<< HEAD
+package = []
+=======
+package = [{name = "requests"}]
+>>>>>>> origin/main

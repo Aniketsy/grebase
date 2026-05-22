@@ -25,7 +25,10 @@ def test_select_remote_none_when_missing(monkeypatch) -> None:
 
 def test_detect_target_branch_with_remote(monkeypatch) -> None:
     monkeypatch.setattr("grebase.branch_detector.has_remote", lambda *_args, **_kwargs: True)
-    monkeypatch.setattr("grebase.branch_detector.get_default_remote_branch", lambda *_args, **_kwargs: "main")
+    monkeypatch.setattr(
+        "grebase.branch_detector.get_default_remote_branch",
+        lambda *_args, **_kwargs: "main",
+    )
     assert detect_target_branch(Path.cwd(), None, remote="origin") == "origin/main"
 
 

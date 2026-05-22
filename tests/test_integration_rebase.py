@@ -49,7 +49,9 @@ def _setup_semantic_conflict(repo: Path) -> Path:
     return file_path
 
 
-def test_rebase_autoresolves_import_conflict(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_rebase_autoresolves_import_conflict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     if shutil.which("git") is None:
         pytest.skip("git not available")
 
@@ -141,7 +143,9 @@ def test_rebase_fails_with_dirty_worktree(tmp_path: Path, monkeypatch: pytest.Mo
     assert run_workflow(target="main") == 1
 
 
-def test_rebase_fails_when_rebase_in_progress(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_rebase_fails_when_rebase_in_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     if shutil.which("git") is None:
         pytest.skip("git not available")
 
