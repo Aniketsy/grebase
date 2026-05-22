@@ -83,4 +83,4 @@ def test_resolve_with_choice_current(tmp_path: Path) -> None:
     file_path = tmp_path / "sample.py"
     file_path.write_text(_load("semantic_conflict.py"), encoding="utf-8")
     assert resolve_with_choice(tmp_path, "sample.py", "current") is True
-    assert "timeout = 30" in file_path.read_text(encoding="utf-8")
+    assert "timeout = 120" in file_path.read_text(encoding="utf-8")

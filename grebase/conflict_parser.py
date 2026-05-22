@@ -38,18 +38,21 @@ def parse_conflict_segments(text: str) -> list[Segment]:
         if line.startswith("<<<<<<<"):
             flush_buffer()
             idx += 1
-            current: list[str] = []
-            incoming: list[str] = []
+            head_lines: list[str] = []
+            incoming_lines: list[str] = []
             while idx < len(lines) and not lines[idx].startswith("======="):
-                current.append(lines[idx])
+                head_lines.append(lines[idx])
                 idx += 1
             idx += 1
             while idx < len(lines) and not lines[idx].startswith(">>>>>>>"):
-                incoming.append(lines[idx])
+                incoming_lines.append(lines[idx])
                 idx += 1
             marker = lines[idx].strip() if idx < len(lines) else ""
             idx += 1
-            segments.append(ConflictSegment("".join(current), "".join(incoming), marker))
+            # During rebase, HEAD is the target branch; treat incoming as "current".
+            segments.append(
+                ConflictSegment("".join(incoming_lines), "".join(head_lines), marker)
+            )
         else:
             buffer.append(line)
             idx += 1

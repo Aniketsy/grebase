@@ -61,7 +61,7 @@ def main(
     policy: str = typer.Option(
         "prompt",
         "--policy",
-        help="Ambiguous conflict policy: prompt, current, incoming",
+        help="Ambiguous conflict policy: prompt, current (yours), incoming (theirs)",
     ),
     audit: bool = typer.Option(False, "--audit", help="Write audit log to .git/grebase.log"),
     verbose: bool = typer.Option(False, "--verbose"),
@@ -285,7 +285,7 @@ def run(
     policy: str = typer.Option(
         "prompt",
         "--policy",
-        help="Ambiguous conflict policy: prompt, current, incoming",
+        help="Ambiguous conflict policy: prompt, current (yours), incoming (theirs)",
     ),
     audit: bool = typer.Option(False, "--audit", help="Write audit log to .git/grebase.log"),
     verbose: bool = typer.Option(False, "--verbose"),

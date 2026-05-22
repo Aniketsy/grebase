@@ -33,5 +33,5 @@ omega
     assert isinstance(segments[2], TextSegment)
     conflict = segments[1]
     assert isinstance(conflict, ConflictSegment)
-    assert conflict.current == "one\n"
-    assert conflict.incoming == "two\n"
+    assert conflict.current == "two\n"
+    assert conflict.incoming == "one\n"

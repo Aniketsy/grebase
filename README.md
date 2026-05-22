@@ -73,7 +73,7 @@ grebase --abort      # bail out and restore original state
 | Flag | Description |
 |---|---|
 | `--remote <name>` | Remote to use: `auto`, `origin`, `upstream`, or any name |
-| `--policy <mode>` | Default for ambiguous conflicts: `prompt` · `current` · `incoming` |
+| `--policy <mode>` | Default for ambiguous conflicts: `prompt` · `current` (yours) · `incoming` (theirs) |
 | `--safe-only` | Auto-resolve only, never guess — prompt for everything else |
 | `--non-interactive` | No prompts — exits if a decision is needed |
 | `--dry-run` | Simulate the full rebase without writing any files |

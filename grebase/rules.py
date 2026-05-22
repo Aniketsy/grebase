@@ -23,7 +23,7 @@ def resolve_imports(current: str, incoming: str) -> str | None:
 
 def resolve_formatting(current: str, incoming: str) -> str | None:
     if normalize_whitespace(current) == normalize_whitespace(incoming):
-        return incoming
+        return current
     return None
 
 
