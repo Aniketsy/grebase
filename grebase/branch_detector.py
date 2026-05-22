@@ -15,9 +15,7 @@ def select_remote(repo_path: Path, preferred: str = "auto") -> str | None:
     return None
 
 
-def detect_target_branch(
-    repo_path: Path, target: str | None, remote: str | None = "origin"
-) -> str:
+def detect_target_branch(repo_path: Path, target: str | None, remote: str | None = "origin") -> str:
     if target:
         return target
     if remote and has_remote(repo_path, remote=remote):

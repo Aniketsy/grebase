@@ -49,9 +49,7 @@ def parse_conflict_segments(text: str) -> list[Segment]:
                 idx += 1
             marker = lines[idx].strip() if idx < len(lines) else ""
             idx += 1
-            segments.append(
-                ConflictSegment("".join(current), "".join(incoming), marker)
-            )
+            segments.append(ConflictSegment("".join(current), "".join(incoming), marker))
         else:
             buffer.append(line)
             idx += 1

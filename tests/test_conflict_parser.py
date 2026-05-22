@@ -1,13 +1,13 @@
 from grebase.conflict_parser import (
-	ConflictSegment,
-	TextSegment,
-	has_conflicts,
-	parse_conflict_segments,
+    ConflictSegment,
+    TextSegment,
+    has_conflicts,
+    parse_conflict_segments,
 )
 
 
 def test_has_conflicts_detects_markers() -> None:
-	text = """before
+    text = """before
 <<<<<<< HEAD
 one
 =======
@@ -15,11 +15,11 @@ two
 >>>>>>> origin/main
 after
 """
-	assert has_conflicts(text) is True
+    assert has_conflicts(text) is True
 
 
 def test_parse_conflict_segments_splits_text() -> None:
-	text = """alpha
+    text = """alpha
 <<<<<<< HEAD
 one
 =======
@@ -27,11 +27,11 @@ two
 >>>>>>> origin/main
 omega
 """
-	segments = parse_conflict_segments(text)
-	assert isinstance(segments[0], TextSegment)
-	assert isinstance(segments[1], ConflictSegment)
-	assert isinstance(segments[2], TextSegment)
-	conflict = segments[1]
-	assert isinstance(conflict, ConflictSegment)
-	assert conflict.current == "one\n"
-	assert conflict.incoming == "two\n"
+    segments = parse_conflict_segments(text)
+    assert isinstance(segments[0], TextSegment)
+    assert isinstance(segments[1], ConflictSegment)
+    assert isinstance(segments[2], TextSegment)
+    conflict = segments[1]
+    assert isinstance(conflict, ConflictSegment)
+    assert conflict.current == "one\n"
+    assert conflict.incoming == "two\n"

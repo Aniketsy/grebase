@@ -45,6 +45,8 @@ grebase = "grebase.cli:app"
 
 [tool.black]
 line-length = 100
+target-version = ["py312"]
+exclude = '^(.*[/\\\\](examples|tests[/\\\\]fixtures|\.venv|\.git|\.ruff_cache|\.pytest_cache|dist|build)[/\\\\]).*$'
 
 [tool.ruff]
 line-length = 100

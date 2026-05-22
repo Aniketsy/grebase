@@ -133,9 +133,7 @@ def run_workflow(
     rebase_in_progress = is_rebase_in_progress(repo_path)
 
     if status_porcelain(repo_path) and not rebase_in_progress:
-        console.print(
-            "[yellow]![/yellow] Working tree not clean. Commit or stash changes first."
-        )
+        console.print("[yellow]![/yellow] Working tree not clean. Commit or stash changes first.")
         return 1
 
     current_branch = get_current_branch(repo_path)
@@ -206,25 +204,19 @@ def run_workflow(
             if not config.interactive and policy != "prompt":
                 resolve_with_choice(repo_path, conflict_file, policy)
                 resolved_files.append(conflict_file)
-                console.print(
-                    f"[green]✓[/green] Applied {policy} to {conflict_file}"
-                )
+                console.print(f"[green]✓[/green] Applied {policy} to {conflict_file}")
                 audit_log("policy", f"{policy} {conflict_file}")
                 continue
 
             if not config.interactive:
-                console.print(
-                    f"[yellow]![/yellow] Conflict requires input: {conflict_file}"
-                )
+                console.print(f"[yellow]![/yellow] Conflict requires input: {conflict_file}")
                 return 2
 
             last_commit = last_commit_for_file(repo_path, conflict_file)
             console.print(f"[yellow]![/yellow] Conflict: {conflict_file}")
             if last_commit:
                 console.print(f"[blue]i[/blue] Last change: {last_commit}")
-            console.print(
-                "[blue]i[/blue] Choose how to resolve. If unsure, use Show diff."
-            )
+            console.print("[blue]i[/blue] Choose how to resolve. If unsure, use Show diff.")
 
             action = batch_choice or prompt_conflict_action()
             if action == "1":

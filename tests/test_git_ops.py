@@ -49,25 +49,25 @@ def test_list_conflict_files(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_has_remote(monkeypatch: pytest.MonkeyPatch) -> None:
-	def fake_run_git(*_args: object, **_kwargs: object) -> SimpleNamespace:
-		return SimpleNamespace(stdout="origin\nupstream\n", stderr="", returncode=0)
+    def fake_run_git(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(stdout="origin\nupstream\n", stderr="", returncode=0)
 
-	monkeypatch.setattr("grebase.git_ops.run_git", fake_run_git)
-	assert has_remote(Path.cwd(), remote="origin") is True
-	assert has_remote(Path.cwd(), remote="missing") is False
+    monkeypatch.setattr("grebase.git_ops.run_git", fake_run_git)
+    assert has_remote(Path.cwd(), remote="origin") is True
+    assert has_remote(Path.cwd(), remote="missing") is False
 
 
 def test_is_rebase_in_progress(monkeypatch: pytest.MonkeyPatch) -> None:
-	def fake_run_git(*_args: object, **_kwargs: object) -> SimpleNamespace:
-		return SimpleNamespace(stdout="patch", stderr="", returncode=0)
+    def fake_run_git(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(stdout="patch", stderr="", returncode=0)
 
-	monkeypatch.setattr("grebase.git_ops.run_git", fake_run_git)
-	assert is_rebase_in_progress(Path.cwd()) is True
+    monkeypatch.setattr("grebase.git_ops.run_git", fake_run_git)
+    assert is_rebase_in_progress(Path.cwd()) is True
 
 
 def test_list_changed_files(monkeypatch: pytest.MonkeyPatch) -> None:
-	def fake_run_git(*_args: object, **_kwargs: object) -> SimpleNamespace:
-		return SimpleNamespace(stdout=" M file1.py\nA  file2.txt\n", stderr="", returncode=0)
+    def fake_run_git(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(stdout=" M file1.py\nA  file2.txt\n", stderr="", returncode=0)
 
-	monkeypatch.setattr("grebase.git_ops.run_git", fake_run_git)
-	assert list_changed_files(Path.cwd()) == ["file1.py", "file2.txt"]
+    monkeypatch.setattr("grebase.git_ops.run_git", fake_run_git)
+    assert list_changed_files(Path.cwd()) == ["file1.py", "file2.txt"]
