@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [
-  { name = "Grebase Contributors" }
+  { name = "Aniket Singh Yadav", email = "singhyadavaniket43@email.com" }
 ]
 keywords = ["git", "rebase", "cli", "automation"]
 classifiers = [
