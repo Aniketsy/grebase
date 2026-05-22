@@ -1,13 +1,5 @@
 # grebase
 
-```
-	 ____ _ ____  ____   ___  ____  _____
-	/ ___| |  _ \|  _ \ / _ \| __ )| ____|
- | |  _| | |_) | |_) | | | |  _ \|  _|  
- | |_| | |  _ <|  _ <| |_| | |_) | |___ 
-	\____|_|_| \_\_| \_\\___/|____/|_____|
-```
-
 Safe, rule-based Git rebase assistant for terminal-first workflows.
 
 [![CI](/actions/workflows/ci.yml/badge.svg)](/actions/workflows/ci.yml)
