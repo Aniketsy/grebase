@@ -73,7 +73,7 @@ def test_rebase_autoresolves_import_conflict(tmp_path: Path, monkeypatch: pytest
     _run_git(tmp_path, ["checkout", "feature"])
 
     monkeypatch.chdir(tmp_path)
-    assert run_workflow(target="main") == 0
+    assert run_workflow(target="main", interactive=False) == 0
 
     merged = file_path.read_text(encoding="utf-8")
     assert "import sys" in merged
@@ -88,7 +88,7 @@ def test_rebase_abort(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _setup_semantic_conflict(tmp_path)
 
     monkeypatch.chdir(tmp_path)
-    assert run_workflow(target="main") == 2
+    assert run_workflow(target="main", interactive=False) == 2
     assert _has_rebase(tmp_path) is True
 
     assert run_workflow(abort_flag=True) == 0
@@ -103,7 +103,7 @@ def test_rebase_skip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _setup_semantic_conflict(tmp_path)
 
     monkeypatch.chdir(tmp_path)
-    assert run_workflow(target="main") == 2
+    assert run_workflow(target="main", interactive=False) == 2
     assert _has_rebase(tmp_path) is True
 
     assert run_workflow(skip_flag=True) == 0
@@ -120,7 +120,7 @@ def test_rebase_continue_after_manual_resolution(
     file_path = _setup_semantic_conflict(tmp_path)
 
     monkeypatch.chdir(tmp_path)
-    assert run_workflow(target="main") == 2
+    assert run_workflow(target="main", interactive=False) == 2
     assert _has_rebase(tmp_path) is True
 
     file_path.write_text("timeout = 120\n", encoding="utf-8")
@@ -149,7 +149,7 @@ def test_rebase_fails_when_rebase_in_progress(tmp_path: Path, monkeypatch: pytes
     _setup_semantic_conflict(tmp_path)
 
     monkeypatch.chdir(tmp_path)
-    assert run_workflow(target="main") == 2
+    assert run_workflow(target="main", interactive=False) == 2
     assert _has_rebase(tmp_path) is True
 
-    assert run_workflow(target="main") == 1
+    assert run_workflow(target="main", interactive=False) == 2

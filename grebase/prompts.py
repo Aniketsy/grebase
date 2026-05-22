@@ -7,10 +7,8 @@ PROMPT_TEXT = (
     "3. Keep current (all remaining)\n"
     "4. Keep incoming (all remaining)\n"
     "5. Show diff\n"
-    "6. Open editor\n"
-    "7. Manual resolve\n"
-    "8. Skip\n"
-    "9. Abort\n"
+    "6. Skip\n"
+    "7. Abort\n"
     "> "
 )
 

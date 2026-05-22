@@ -137,3 +137,12 @@ def diff_stat_range(repo_path: Path, base_ref: str, head_ref: str = "HEAD") -> s
         cwd=repo_path,
         check=False,
     ).stdout
+
+
+def last_commit_for_file(repo_path: Path, file_path: str) -> str:
+    result = run_git(
+        ["log", "-1", "--pretty=%h %s", "--", file_path],
+        cwd=repo_path,
+        check=False,
+    )
+    return result.stdout.strip()

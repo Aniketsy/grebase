@@ -21,6 +21,7 @@ from .git_ops import (
     get_current_branch,
     has_remote,
     is_rebase_in_progress,
+    last_commit_for_file,
     rebase,
     rebase_abort,
     rebase_continue,
@@ -45,7 +46,11 @@ def main(
     skip_flag: bool = typer.Option(False, "--skip"),
     status_flag: bool = typer.Option(False, "--status"),
     dry_run: bool = typer.Option(False, "--dry-run"),
-    interactive: bool = typer.Option(False, "--interactive"),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--non-interactive",
+        help="Prompt for unresolved conflicts (default: on)",
+    ),
     safe_only: bool = typer.Option(False, "--safe-only"),
     policy: str = typer.Option(
         "prompt",
@@ -77,7 +82,7 @@ def run_workflow(
     skip_flag: bool = False,
     status_flag: bool = False,
     dry_run: bool = False,
-    interactive: bool = False,
+    interactive: bool = True,
     safe_only: bool = False,
     policy: str = "prompt",
     verbose: bool = False,
@@ -107,13 +112,9 @@ def run_workflow(
         console.print(status_porcelain(repo_path) or "clean")
         return 0
 
-    if is_rebase_in_progress(repo_path):
-        console.print(
-            "[yellow]![/yellow] Rebase in progress. Use --continue/--abort/--skip."
-        )
-        return 1
+    rebase_in_progress = is_rebase_in_progress(repo_path)
 
-    if status_porcelain(repo_path):
+    if status_porcelain(repo_path) and not rebase_in_progress:
         console.print(
             "[yellow]![/yellow] Working tree not clean. Commit or stash changes first."
         )
@@ -139,7 +140,9 @@ def run_workflow(
         console.print("[blue]i[/blue] Incoming changes summary:")
         console.print(summary)
 
-    if config.dry_run:
+    if rebase_in_progress:
+        console.print("[yellow]![/yellow] Resuming rebase with conflicts")
+    elif config.dry_run:
         console.print("[yellow]![/yellow] Dry run - skipping fetch")
     elif has_remote(repo_path):
         fetch(repo_path)
@@ -147,9 +150,10 @@ def run_workflow(
     else:
         console.print("[yellow]![/yellow] No remote found - skipping fetch")
 
-    save_state(repo_path, current_branch, target_branch)
+    if not rebase_in_progress:
+        save_state(repo_path, current_branch, target_branch)
 
-    if not config.dry_run:
+    if not config.dry_run and not rebase_in_progress:
         rebase(repo_path, target_branch)
 
     batch_choice: str | None = None
@@ -182,6 +186,14 @@ def run_workflow(
                 )
                 return 2
 
+            last_commit = last_commit_for_file(repo_path, conflict_file)
+            console.print(f"[yellow]![/yellow] Conflict: {conflict_file}")
+            if last_commit:
+                console.print(f"[blue]i[/blue] Last change: {last_commit}")
+            console.print(
+                "[blue]i[/blue] Choose how to resolve. If unsure, use Show diff."
+            )
+
             action = batch_choice or prompt_conflict_action()
             if action == "1":
                 resolve_with_choice(repo_path, conflict_file, "current")
@@ -201,15 +213,9 @@ def run_workflow(
                 console.print(diff_file(repo_path, conflict_file))
                 return 2
             elif action == "6":
-                console.print("Open your editor and resolve manually.")
-                return 2
-            elif action == "7":
-                console.print("Resolve manually, then run grebase --continue.")
-                return 2
-            elif action == "8":
                 rebase_skip(repo_path)
                 return 2
-            elif action == "9":
+            elif action == "7":
                 rebase_abort(repo_path)
                 return 1
             else:
@@ -234,7 +240,11 @@ def run(
     skip_flag: bool = typer.Option(False, "--skip"),
     status_flag: bool = typer.Option(False, "--status"),
     dry_run: bool = typer.Option(False, "--dry-run"),
-    interactive: bool = typer.Option(False, "--interactive"),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--non-interactive",
+        help="Prompt for unresolved conflicts (default: on)",
+    ),
     safe_only: bool = typer.Option(False, "--safe-only"),
     policy: str = typer.Option(
         "prompt",

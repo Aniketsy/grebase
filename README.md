@@ -35,7 +35,7 @@ grebase run main
 - `--skip` skip the current commit
 - `--status` show porcelain status
 - `--dry-run` simulate without writing files
-- `--interactive` prompt for unresolved conflicts
+- `--interactive/--non-interactive` prompt for unresolved conflicts (default: on)
 - `--safe-only` only apply safe auto-resolutions
 - `--policy` default policy for ambiguous conflicts: prompt, current, incoming
 - `--verbose` verbose logging

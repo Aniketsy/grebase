@@ -89,3 +89,18 @@ def test_batch_choice_incoming_applies_to_remaining(
     assert cli.run_workflow(interactive=True) == 0
     assert captured == [("a.py", "incoming"), ("b.py", "incoming")]
     assert prompt_calls["count"] == 1
+
+
+def test_conflict_context_shows_last_commit(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_workflow_mocks(monkeypatch, [["a.py"], []])
+
+    monkeypatch.setattr(cli, "last_commit_for_file", lambda *_: "abc123 fix config")
+    monkeypatch.setattr(cli, "prompt_conflict_action", lambda: "1")
+
+    assert cli.run_workflow(interactive=True) == 0
+    output = capsys.readouterr().out
+    assert "Conflict: a.py" in output
+    assert "Last change: abc123 fix config" in output
