@@ -1,16 +1,16 @@
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from grebase.exceptions import GitError
 from grebase.git_ops import (
-	has_remote,
-	is_git_repo,
-	is_rebase_in_progress,
-	list_changed_files,
-	list_conflict_files,
-	run_git,
+    has_remote,
+    is_git_repo,
+    is_rebase_in_progress,
+    list_changed_files,
+    list_conflict_files,
+    run_git,
 )
 
 

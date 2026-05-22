@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import os
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-import subprocess
 from typing import Iterable
-import os
 
 from .exceptions import GitError
 

@@ -8,12 +8,13 @@ from rich.console import Console
 
 from .branch_detector import detect_target_branch
 from .config import GrebaseConfig
+from .conflict_classifier import LOCKFILES
 from .conflict_detector import get_conflict_files
 from .conflict_resolver import resolve_file, resolve_with_choice
 from .exceptions import GitError
 from .git_ops import (
-    add_files,
     add_all_changes,
+    add_files,
     diff_file,
     diff_stat_range,
     fetch,
@@ -26,7 +27,6 @@ from .git_ops import (
     rebase_skip,
     status_porcelain,
 )
-from .conflict_classifier import LOCKFILES
 from .logger import get_logger
 from .prompts import prompt_conflict_action
 from .repo_detector import ensure_git_repo

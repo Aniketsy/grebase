@@ -1,6 +1,5 @@
 from prompt_toolkit import prompt
 
-
 PROMPT_TEXT = (
     "Select resolution:\n"
     "1. Keep current (this file)\n"

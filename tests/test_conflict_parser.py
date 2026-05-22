@@ -1,4 +1,9 @@
-from grebase.conflict_parser import ConflictSegment, TextSegment, has_conflicts, parse_conflict_segments
+from grebase.conflict_parser import (
+	ConflictSegment,
+	TextSegment,
+	has_conflicts,
+	parse_conflict_segments,
+)
 
 
 def test_has_conflicts_detects_markers() -> None:

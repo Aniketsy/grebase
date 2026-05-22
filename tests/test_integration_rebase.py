@@ -5,7 +5,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import typer
 
 from grebase.cli import run_workflow
 
