@@ -74,8 +74,8 @@ def has_remote(repo_path: Path, remote: str = "origin") -> bool:
     return remote in list_remotes(repo_path)
 
 
-def rebase(repo_path: Path, target: str) -> None:
-    run_git(["rebase", target], cwd=repo_path, check=False)
+def rebase(repo_path: Path, target: str) -> GitCommandResult:
+    return run_git(["rebase", target], cwd=repo_path, check=False)
 
 
 def rebase_continue(repo_path: Path, allow_editor: bool = True) -> None:

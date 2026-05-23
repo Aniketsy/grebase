@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,7 +19,7 @@ def _setup_workflow_mocks(
     monkeypatch.setattr(cli, "has_remote", lambda *_: False)
     monkeypatch.setattr(cli, "select_remote", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(cli, "fetch", lambda *_: None)
-    monkeypatch.setattr(cli, "rebase", lambda *_: None)
+    monkeypatch.setattr(cli, "rebase", lambda *_: SimpleNamespace(returncode=0, stderr=""))
     monkeypatch.setattr(cli, "diff_stat_range", lambda *_: "")
     monkeypatch.setattr(cli, "is_rebase_in_progress", lambda *_: False)
     monkeypatch.setattr(cli, "status_porcelain", lambda *_: "")
@@ -38,20 +39,40 @@ def _setup_workflow_mocks(
     return captured
 
 
-def test_policy_current_applies_to_all(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_policy_mine_applies_to_all(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+    captured = _setup_workflow_mocks(monkeypatch, [["a.py", "b.py"], []])
+
+    assert cli.run_workflow(policy="mine", interactive=False) == 0
+    assert captured == [("a.py", "mine"), ("b.py", "mine")]
+
+
+def test_policy_theirs_applies_to_all(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+    captured = _setup_workflow_mocks(monkeypatch, [["a.py", "b.py"], []])
+
+    assert cli.run_workflow(policy="theirs", interactive=False) == 0
+    assert captured == [("a.py", "theirs"), ("b.py", "theirs")]
+
+
+def test_policy_current_alias_applies_to_all(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.chdir(tmp_path)
     captured = _setup_workflow_mocks(monkeypatch, [["a.py", "b.py"], []])
 
     assert cli.run_workflow(policy="current", interactive=False) == 0
-    assert captured == [("a.py", "current"), ("b.py", "current")]
+    assert captured == [("a.py", "mine"), ("b.py", "mine")]
 
 
-def test_policy_incoming_applies_to_all(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_policy_incoming_alias_applies_to_all(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.chdir(tmp_path)
     captured = _setup_workflow_mocks(monkeypatch, [["a.py", "b.py"], []])
 
     assert cli.run_workflow(policy="incoming", interactive=False) == 0
-    assert captured == [("a.py", "incoming"), ("b.py", "incoming")]
+    assert captured == [("a.py", "theirs"), ("b.py", "theirs")]
 
 
 def test_batch_choice_current_applies_to_remaining(
@@ -69,7 +90,7 @@ def test_batch_choice_current_applies_to_remaining(
     monkeypatch.setattr(cli, "prompt_conflict_action", _prompt)
 
     assert cli.run_workflow(interactive=True) == 0
-    assert captured == [("a.py", "current"), ("b.py", "current")]
+    assert captured == [("a.py", "mine"), ("b.py", "mine")]
     assert prompt_calls["count"] == 1
 
 
@@ -88,7 +109,7 @@ def test_batch_choice_incoming_applies_to_remaining(
     monkeypatch.setattr(cli, "prompt_conflict_action", _prompt)
 
     assert cli.run_workflow(interactive=True) == 0
-    assert captured == [("a.py", "incoming"), ("b.py", "incoming")]
+    assert captured == [("a.py", "theirs"), ("b.py", "theirs")]
     assert prompt_calls["count"] == 1
 
 

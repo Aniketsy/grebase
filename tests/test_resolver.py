@@ -79,8 +79,15 @@ def test_resolve_lockfile_conflict_fails_when_regen_fails(
     assert resolve_file(tmp_path, "poetry.lock", config) is False
 
 
-def test_resolve_with_choice_current(tmp_path: Path) -> None:
+def test_resolve_with_choice_mine(tmp_path: Path) -> None:
     file_path = tmp_path / "sample.py"
     file_path.write_text(_load("semantic_conflict.py"), encoding="utf-8")
-    assert resolve_with_choice(tmp_path, "sample.py", "current") is True
+    assert resolve_with_choice(tmp_path, "sample.py", "mine") is True
     assert "timeout = 120" in file_path.read_text(encoding="utf-8")
+
+
+def test_resolve_with_choice_theirs(tmp_path: Path) -> None:
+    file_path = tmp_path / "sample.py"
+    file_path.write_text(_load("semantic_conflict.py"), encoding="utf-8")
+    assert resolve_with_choice(tmp_path, "sample.py", "theirs") is True
+    assert "timeout = 30" in file_path.read_text(encoding="utf-8")

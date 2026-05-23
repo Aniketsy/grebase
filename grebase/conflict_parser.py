@@ -49,10 +49,8 @@ def parse_conflict_segments(text: str) -> list[Segment]:
                 idx += 1
             marker = lines[idx].strip() if idx < len(lines) else ""
             idx += 1
-            # During rebase, HEAD is the target branch; treat incoming as "current".
-            segments.append(
-                ConflictSegment("".join(incoming_lines), "".join(head_lines), marker)
-            )
+            # During rebase, HEAD is the target branch; policy mapping is handled elsewhere.
+            segments.append(ConflictSegment("".join(incoming_lines), "".join(head_lines), marker))
         else:
             buffer.append(line)
             idx += 1

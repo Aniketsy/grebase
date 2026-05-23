@@ -5,7 +5,7 @@
 Rebase without the wreckage.
 Handles the obvious. Asks you about the rest.
 
-[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![CI](https://github.com/Aniketsy/grebase/actions/workflows/ci.yml/badge.svg)](https://github.com/Aniketsy/grebase/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/grebase?color=0A7AFF&label=pypi)](https://pypi.org/project/grebase)
 [![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
 ![Status: Active](https://img.shields.io/badge/status-active%20development-orange)
@@ -13,16 +13,23 @@ Handles the obvious. Asks you about the rest.
 ```
 $ grebase main
 
-  ✔  fetched origin
-  ✔  3 commits ahead, 7 commits behind
-  ⚡  conflict in api/auth.js — import order only → auto-resolved
-  ⚡  conflict in yarn.lock → regenerating with yarn install
-  ?  conflict in src/utils.ts — semantic change detected
-
-  [1] keep yours   [2] take theirs   [3] show diff   [4] open editor
-  → 2
-
-  ✔  rebase complete — 7 commits applied cleanly
+✓ Repository detected
+✓ Current branch: feature
+✓ Target branch: main
+i Incoming changes summary:
+  M auth.py
+! Conflict: auth.py
+i Last change: a3f1c2e feat: improve token hashing
+i Choose how to resolve. If unsure, use Show diff.
+Select resolution:
+1. Keep mine (this file)
+2. Keep theirs (this file)
+3. Keep mine (all remaining)
+4. Keep theirs (all remaining)
+5. Show diff
+6. Skip
+7. Abort
+> 2
 ```
 
 </div>
@@ -43,13 +50,17 @@ grebase handles the boring ones automatically and surfaces only the ones that ge
 pipx install grebase
 ```
 
-> Requires Python 3.9+. `pipx` is recommended so it doesn't pollute your global environment.
+> Requires Python 3.11+. `pipx` is recommended so it doesn't pollute your global environment.
 
 **For contributors:**
 ```bash
-git clone https://github.com/your-org/grebase
+git clone https://github.com/Aniketsy/grebase
 pip install -e .[dev]
 ```
+
+**Windows notes:**
+- Install Git for Windows and make sure `git` is on your PATH.
+- Install pipx and run `pipx ensurepath` before installing grebase.
 
 ---
 
@@ -73,13 +84,14 @@ grebase --abort      # bail out and restore original state
 | Flag | Description |
 |---|---|
 | `--remote <name>` | Remote to use: `auto`, `origin`, `upstream`, or any name |
-| `--policy <mode>` | Default for ambiguous conflicts: `prompt` · `current` (yours) · `incoming` (theirs) |
+| `--policy <mode>` | Default for ambiguous conflicts: `prompt` · `mine` (yours) · `theirs` (target). Aliases: `current`, `incoming` |
 | `--safe-only` | Auto-resolve only, never guess — prompt for everything else |
 | `--non-interactive` | No prompts — exits if a decision is needed |
 | `--dry-run` | Simulate the full rebase without writing any files |
 | `--audit` | Write a decision log to `.git/grebase.log` |
 | `--status` | Show current rebase state |
 | `--verbose` | Detailed output |
+| `--version` | Show grebase version and exit |
 
 ---
 
@@ -109,21 +121,6 @@ If the tool isn't installed or fails, grebase falls back to prompting you.
 
 ---
 
-## Before it starts
-
-grebase prints a summary of incoming changes before touching anything — so you know what's about to happen:
-
-```
-  main is 7 commits ahead of your branch
-  ─────────────────────────────────────────
-  a3f1c2e  fix: update token expiry logic
-  8bc09d1  feat: add rate limiting middleware
-  ...
-  → 2 files will likely conflict (api/auth.js, src/config.ts)
-```
-
----
-
 ## Safety
 
 - **Never rewrites logic silently.** Semantic conflicts always get a prompt.
@@ -150,10 +147,10 @@ Install the relevant package manager, or resolve the lockfile manually and run `
 
 Contributions are very welcome — this is early-stage and your feedback matters.
 
-- Read [docs/contributing.md](docs/contributing.md) to get started
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started
 - Keep PRs small and focused
 - Add tests for any new behavior
-- New conflict resolution rules go in `grebase/resolvers/` — each rule is one file
+- New conflict resolution rules go in `grebase/rules.py` and `grebase/conflict_classifier.py`
 
 ```bash
 # run tests

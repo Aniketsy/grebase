@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
 from pathlib import Path
 from typing import Optional
 
@@ -38,10 +40,36 @@ app = typer.Typer(add_completion=False, help="grebase - safe Git rebase assistan
 console = Console()
 
 
+def version_callback(value: bool) -> None:
+    if value:
+        try:
+            resolved_version = package_version("grebase")
+        except PackageNotFoundError:
+            resolved_version = "0.0.0"
+        console.print(f"grebase {resolved_version}")
+        raise typer.Exit()
+
+
+def normalize_policy(policy: str) -> str:
+    normalized = policy.strip().lower()
+    if normalized in {"current", "mine"}:
+        return "mine"
+    if normalized in {"incoming", "theirs"}:
+        return "theirs"
+    return normalized
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
     target: Optional[str] = typer.Argument(None),
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show grebase version and exit",
+    ),
     continue_flag: bool = typer.Option(False, "--continue"),
     abort_flag: bool = typer.Option(False, "--abort"),
     skip_flag: bool = typer.Option(False, "--skip"),
@@ -61,7 +89,10 @@ def main(
     policy: str = typer.Option(
         "prompt",
         "--policy",
-        help="Ambiguous conflict policy: prompt, current (yours), incoming (theirs)",
+        help=(
+            "Ambiguous conflict policy: prompt, mine (yours), theirs (target). "
+            "Aliases: current=mine, incoming=theirs"
+        ),
     ),
     audit: bool = typer.Option(False, "--audit", help="Write audit log to .git/grebase.log"),
     verbose: bool = typer.Option(False, "--verbose"),
@@ -100,6 +131,7 @@ def run_workflow(
 ) -> int:
     repo_path = Path.cwd()
     logger = get_logger("grebase", verbose=verbose)
+    normalized_policy = normalize_policy(policy)
 
     try:
         ensure_git_repo(repo_path)
@@ -180,8 +212,12 @@ def run_workflow(
         save_state(repo_path, current_branch, target_branch)
 
     if not config.dry_run and not rebase_in_progress:
-        rebase(repo_path, target_branch)
+        result = rebase(repo_path, target_branch)
         audit_log("rebase", f"target={target_branch}")
+        if result.returncode not in (0, 1):
+            error_detail = result.stderr or "git rebase failed"
+            console.print(f"[red]x[/red] git rebase failed: {error_detail}")
+            return 1
 
     batch_choice: str | None = None
     while True:
@@ -201,11 +237,11 @@ def run_workflow(
                 audit_log("auto-resolve", conflict_file)
                 continue
 
-            if not config.interactive and policy != "prompt":
-                resolve_with_choice(repo_path, conflict_file, policy)
+            if not config.interactive and normalized_policy != "prompt":
+                resolve_with_choice(repo_path, conflict_file, normalized_policy)
                 resolved_files.append(conflict_file)
-                console.print(f"[green]✓[/green] Applied {policy} to {conflict_file}")
-                audit_log("policy", f"{policy} {conflict_file}")
+                console.print(f"[green]✓[/green] Applied {normalized_policy} to {conflict_file}")
+                audit_log("policy", f"{normalized_policy} {conflict_file}")
                 continue
 
             if not config.interactive:
@@ -218,40 +254,49 @@ def run_workflow(
                 console.print(f"[blue]i[/blue] Last change: {last_commit}")
             console.print("[blue]i[/blue] Choose how to resolve. If unsure, use Show diff.")
 
-            action = batch_choice or prompt_conflict_action()
-            if action == "1":
-                resolve_with_choice(repo_path, conflict_file, "current")
-                resolved_files.append(conflict_file)
-                audit_log("choice", f"current {conflict_file}")
-            elif action == "2":
-                resolve_with_choice(repo_path, conflict_file, "incoming")
-                resolved_files.append(conflict_file)
-                audit_log("choice", f"incoming {conflict_file}")
-            elif action == "3":
-                batch_choice = "3"
-                resolve_with_choice(repo_path, conflict_file, "current")
-                resolved_files.append(conflict_file)
-                audit_log("choice", f"current-all {conflict_file}")
-            elif action == "4":
-                batch_choice = "4"
-                resolve_with_choice(repo_path, conflict_file, "incoming")
-                resolved_files.append(conflict_file)
-                audit_log("choice", f"incoming-all {conflict_file}")
-            elif action == "5":
-                console.print(diff_file(repo_path, conflict_file))
-                audit_log("diff", conflict_file)
-                return 2
-            elif action == "6":
-                rebase_skip(repo_path)
-                audit_log("skip", "rebase --skip")
-                return 2
-            elif action == "7":
-                rebase_abort(repo_path)
-                audit_log("abort", "rebase --abort")
-                return 1
-            else:
+            while True:
+                action: str | None = None
+                if batch_choice == "mine":
+                    action = "3"
+                elif batch_choice == "theirs":
+                    action = "4"
+                if action is None:
+                    action = prompt_conflict_action()
+                if action == "1":
+                    resolve_with_choice(repo_path, conflict_file, "mine")
+                    resolved_files.append(conflict_file)
+                    audit_log("choice", f"mine {conflict_file}")
+                    break
+                if action == "2":
+                    resolve_with_choice(repo_path, conflict_file, "theirs")
+                    resolved_files.append(conflict_file)
+                    audit_log("choice", f"theirs {conflict_file}")
+                    break
+                if action == "3":
+                    batch_choice = "mine"
+                    resolve_with_choice(repo_path, conflict_file, "mine")
+                    resolved_files.append(conflict_file)
+                    audit_log("choice", f"mine-all {conflict_file}")
+                    break
+                if action == "4":
+                    batch_choice = "theirs"
+                    resolve_with_choice(repo_path, conflict_file, "theirs")
+                    resolved_files.append(conflict_file)
+                    audit_log("choice", f"theirs-all {conflict_file}")
+                    break
+                if action == "5":
+                    console.print(diff_file(repo_path, conflict_file))
+                    audit_log("diff", conflict_file)
+                    continue
+                if action == "6":
+                    rebase_skip(repo_path)
+                    audit_log("skip", "rebase --skip")
+                    return 2
+                if action == "7":
+                    rebase_abort(repo_path)
+                    audit_log("abort", "rebase --abort")
+                    return 1
                 console.print("Invalid selection")
-                return 2
 
         if resolved_files and not config.dry_run:
             if any(Path(path).name in LOCKFILES for path in resolved_files):
@@ -285,7 +330,10 @@ def run(
     policy: str = typer.Option(
         "prompt",
         "--policy",
-        help="Ambiguous conflict policy: prompt, current (yours), incoming (theirs)",
+        help=(
+            "Ambiguous conflict policy: prompt, mine (yours), theirs (target). "
+            "Aliases: current=mine, incoming=theirs"
+        ),
     ),
     audit: bool = typer.Option(False, "--audit", help="Write audit log to .git/grebase.log"),
     verbose: bool = typer.Option(False, "--verbose"),
