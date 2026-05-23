@@ -1,34 +1,12 @@
-# grebase
+<div align="center">
+  <img src="assets/banner.svg" alt="grebase — git rebase without the fear" width="680"/>
+  <br/><br/>
 
-Rebase without the wreckage.
-Handles the obvious. Asks you about the rest.
-
-[![CI](https://github.com/Aniketsy/grebase/actions/workflows/ci.yml/badge.svg)](https://github.com/Aniketsy/grebase/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/grebase?color=0A7AFF&label=pypi)](https://pypi.org/project/grebase)
-[![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
-![Status: Active](https://img.shields.io/badge/status-active%20development-orange)
-
-```
-$ grebase main
-
-✓ Repository detected
-✓ Current branch: feature
-✓ Target branch: main
-i Incoming changes summary:
-  M auth.py
-! Conflict: auth.py
-i Last change: a3f1c2e feat: improve token hashing
-i Choose how to resolve. If unsure, use Show diff.
-Select resolution:
-1. Keep mine (this file)
-2. Keep theirs (this file)
-3. Keep mine (all remaining)
-4. Keep theirs (all remaining)
-5. Show diff
-6. Skip
-7. Abort
-> 2
-```
+  [![CI](https://github.com/Aniketsy/grebase/actions/workflows/ci.yml/badge.svg)](https://github.com/Aniketsy/grebase/actions/workflows/ci.yml)
+  [![PyPI](https://img.shields.io/pypi/v/grebase?color=0A7AFF&label=pypi)](https://pypi.org/project/grebase)
+  [![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
+  [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
+  ![Status](https://img.shields.io/badge/status-active%20development-orange)
 
 </div>
 
@@ -36,7 +14,7 @@ Select resolution:
 
 ## Why grebase?
 
-Rebasing is painful because of the **middle part** — editing conflict markers in files, remembering to `git add` instead of `git commit`, repeating this for every commit. Most conflicts are actually trivial (import reordering, lockfile churn, whitespace) but git treats them all the same.
+Rebasing is painful because of the **middle part** — editing conflict markers in files, remembering to `git add` instead of `git commit`, repeating this for every commit. Most conflicts are trivial (import reordering, lockfile churn, whitespace) but git treats them all the same.
 
 grebase handles the boring ones automatically and surfaces only the ones that genuinely need your eyes.
 
@@ -56,9 +34,7 @@ git clone https://github.com/Aniketsy/grebase
 pip install -e .[dev]
 ```
 
-**Windows notes:**
-- Install Git for Windows and make sure `git` is on your PATH.
-- Install pipx and run `pipx ensurepath` before installing grebase.
+> **Windows:** Install [Git for Windows](https://gitforwindows.org) and make sure `git` is on your PATH. Run `pipx ensurepath` after installing pipx.
 
 ---
 
@@ -70,23 +46,23 @@ grebase main         # rebase onto main
 grebase origin/main  # rebase onto a specific remote ref
 ```
 
-**Mid-rebase commands** (when a rebase is already in progress):
+**Mid-rebase commands:**
 ```bash
 grebase --continue   # after manually resolving a conflict
 grebase --skip       # skip the current commit
 grebase --abort      # bail out and restore original state
 ```
 
-**Common flags:**
+**Flags:**
 
 | Flag | Description |
 |---|---|
-| `--remote <name>` | Remote to use: `auto`, `origin`, `upstream`, or any name |
-| `--policy <mode>` | Default for ambiguous conflicts: `prompt` · `mine` (yours) · `theirs` (target). Aliases: `current`, `incoming` |
-| `--safe-only` | Auto-resolve only, never guess — prompt for everything else |
-| `--non-interactive` | No prompts — exits if a decision is needed |
+| `--policy mine\|theirs` | Default for ambiguous conflicts: keep yours or take theirs |
+| `--safe-only` | Auto-resolve only — never guess, prompt for everything else |
 | `--dry-run` | Simulate the full rebase without writing any files |
+| `--non-interactive` | No prompts — exits if a decision is needed |
 | `--audit` | Write a decision log to `.git/grebase.log` |
+| `--remote <name>` | Remote to use: `auto`, `origin`, `upstream`, or any name |
 | `--status` | Show current rebase state |
 | `--verbose` | Detailed output |
 | `--version` | Show grebase version and exit |
@@ -119,12 +95,35 @@ If the tool isn't installed or fails, grebase falls back to prompting you.
 
 ---
 
+## How it looks
+
+```
+$ grebase main
+
+✓  Repository detected
+✓  Current branch: feature/auth-improvements
+✓  Target branch:  main
+◆  Incoming changes — auth.py, yarn.lock
+✓  import conflict in auth.py — auto-resolved
+✓  yarn.lock — regenerated via yarn install
+!  Conflict: utils.ts — semantic change detected
+
+   1. Keep mine        2. Take theirs
+   3. Keep mine (all)  4. Take theirs (all)
+   5. Show diff        6. Skip    7. Abort
+   > 2
+
+✓  Rebase complete — 3 commits applied cleanly
+```
+
+---
+
 ## Safety
 
 - **Never rewrites logic silently.** Semantic conflicts always get a prompt.
-- **Always abortable.** Hit `Ctrl+C` or run `grebase --abort` to restore your branch exactly as it was.
-- **Audit trail.** `--audit` logs every decision grebase makes to `.git/grebase.log`.
-- **Dry-run first.** Not sure? `grebase --dry-run` shows exactly what would happen.
+- **Always abortable.** `Ctrl+C` or `grebase --abort` restores your branch exactly as it was.
+- **Audit trail.** `--audit` logs every decision to `.git/grebase.log`.
+- **Dry-run first.** `--dry-run` shows exactly what would happen before touching anything.
 
 ---
 
@@ -137,7 +136,7 @@ Commit or stash your changes first, then run grebase.
 Use `grebase --continue`, `grebase --abort`, or `grebase --skip`.
 
 **Lockfile tool missing**
-Install the relevant package manager, or resolve the lockfile manually and run `grebase --continue`.
+Install the relevant package manager, or resolve manually and run `grebase --continue`.
 
 ---
 
@@ -148,18 +147,17 @@ Contributions are very welcome — this is early-stage and your feedback matters
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started
 - Keep PRs small and focused
 - Add tests for any new behavior
-- New conflict resolution rules go in `grebase/rules.py` and `grebase/conflict_classifier.py`
+- New conflict resolvers go in `grebase/rules.py` and `grebase/conflict_classifier.py`
 
 ```bash
-# run tests
-pytest
-
-# run against a local repo
-grebase --dry-run --verbose
+pytest                        # run tests
+grebase --dry-run --verbose   # test against a local repo
 ```
 
 ---
 
-MIT License · Built for devs who live in the terminal
+<div align="center">
 
+MIT License · Built for devs who live in the terminal · [github.com/Aniketsy/grebase](https://github.com/Aniketsy/grebase)
 
+</div>
