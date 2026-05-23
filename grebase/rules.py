@@ -13,7 +13,7 @@ def normalize_whitespace(text: str) -> str:
 
 def resolve_imports(current: str, incoming: str) -> str | None:
     lines = normalize_lines(current) + normalize_lines(incoming)
-    ordered = OrderedDict()
+    ordered: OrderedDict[str, None] = OrderedDict()
     for line in lines:
         ordered.setdefault(line, None)
     if not ordered:
