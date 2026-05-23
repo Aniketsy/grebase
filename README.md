@@ -1,5 +1,3 @@
-<div align="center">
-
 # grebase
 
 Rebase without the wreckage.
@@ -162,8 +160,6 @@ grebase --dry-run --verbose
 
 ---
 
-<div align="center">
-
 MIT License · Built for devs who live in the terminal
 
-</div>
+
