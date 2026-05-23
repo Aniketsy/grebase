@@ -18,6 +18,11 @@ after
     assert has_conflicts(text) is True
 
 
+def test_has_conflicts_handles_crlf() -> None:
+    text = "before\r\n<<<<<<< HEAD\r\none\r\n=======\r\ntwo\r\n>>>>>>> origin/main\r\nafter\r\n"
+    assert has_conflicts(text) is True
+
+
 def test_parse_conflict_segments_splits_text() -> None:
     text = """alpha
 <<<<<<< HEAD

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -22,7 +23,7 @@ def _setup_audit_mocks(
     monkeypatch.setattr(cli, "select_remote", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(cli, "has_remote", lambda *_: False)
     monkeypatch.setattr(cli, "fetch", lambda *_: None)
-    monkeypatch.setattr(cli, "rebase", lambda *_: None)
+    monkeypatch.setattr(cli, "rebase", lambda *_: SimpleNamespace(returncode=0, stderr=""))
     monkeypatch.setattr(cli, "diff_stat_range", lambda *_: "")
     monkeypatch.setattr(cli, "is_rebase_in_progress", lambda *_: False)
     monkeypatch.setattr(cli, "status_porcelain", lambda *_: "")
@@ -49,4 +50,4 @@ def test_audit_log_records_choices(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     assert log_path.exists()
     content = log_path.read_text(encoding="utf-8")
     assert "choice" in content
-    assert "current a.py" in content
+    assert "mine a.py" in content

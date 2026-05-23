@@ -62,13 +62,14 @@ def resolve_with_choice(repo_path: Path, file_path: str, choice: str) -> bool:
     text = full_path.read_text(encoding="utf-8")
     segments = parse_conflict_segments(text)
     resolved_parts: list[str] = []
+    normalized = choice.strip().lower()
     for segment in segments:
         if isinstance(segment, TextSegment):
             resolved_parts.append(segment.text)
             continue
-        if choice == "current":
+        if normalized in {"mine", "current"}:
             resolved_parts.append(segment.current)
-        elif choice == "incoming":
+        elif normalized in {"theirs", "incoming"}:
             resolved_parts.append(segment.incoming)
         else:
             return False
