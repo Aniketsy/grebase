@@ -2,11 +2,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from rich.console import Console
+
 from .config import GrebaseConfig
 from .conflict_classifier import ConflictType, classify_conflict
 from .conflict_parser import TextSegment, parse_conflict_segments
-from .lockfile_tools import regenerate_lockfile
+from .lockfile_tools import (
+    get_lockfile_command,
+    has_yarn_merge_driver,
+    is_tool_available,
+    regenerate_lockfile,
+)
+from .prompts import prompt_lockfile_regen
 from .rules import resolve_docs, resolve_duplicate, resolve_formatting, resolve_imports
+
+console = Console()
 
 SAFE_TYPES = {
     ConflictType.IMPORTS,
@@ -23,11 +33,28 @@ def resolve_file(repo_path: Path, file_path: str, config: GrebaseConfig) -> bool
     conflict_type = classify_conflict(file_path, segments)
 
     if conflict_type == ConflictType.LOCKFILE:
+        file_name = Path(file_path).name
         if config.safe_only:
             return False
         if config.dry_run:
             return True
-        return regenerate_lockfile(repo_path, Path(file_path).name)
+        command = get_lockfile_command(file_name)
+        if not command or not is_tool_available(command):
+            return False
+        if file_name == "yarn.lock" and has_yarn_merge_driver(repo_path):
+            console.print(
+                "[yellow]![/yellow] Detected yarn merge driver in .gitattributes. "
+                "Skipping auto-regeneration for yarn.lock."
+            )
+            return False
+        if config.interactive:
+            console.print(
+                f"[yellow]![/yellow] {file_name} is a lockfile. "
+                "Regenerating may change package versions."
+            )
+            if not prompt_lockfile_regen(file_name, command):
+                return False
+        return regenerate_lockfile(repo_path, file_name)
 
     if config.safe_only and conflict_type not in SAFE_TYPES:
         return False
