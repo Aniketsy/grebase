@@ -41,6 +41,8 @@ def _is_import_block(text: str) -> bool:
         parts = line.split()
         if not parts or parts[0] not in {"import", "from"}:
             return False
+        if any(ch in line for ch in {'"', "'", ";", "{", "}"}):
+            return False
     return True
 
 

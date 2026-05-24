@@ -44,3 +44,14 @@ def test_classifies_lockfile_conflict() -> None:
     text = _load("poetry.lock")
     segments = parse_conflict_segments(text)
     assert classify_conflict("poetry.lock", segments) == ConflictType.LOCKFILE
+
+
+def test_classifies_javascript_imports_as_semantic() -> None:
+    text = """<<<<<<< HEAD
+import React from 'react';
+=======
+import React, { useState } from 'react';
+>>>>>>> main
+"""
+    segments = parse_conflict_segments(text)
+    assert classify_conflict("App.tsx", segments) == ConflictType.SEMANTIC

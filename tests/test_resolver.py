@@ -4,6 +4,7 @@ import pytest
 
 from grebase.config import GrebaseConfig
 from grebase.conflict_resolver import resolve_file, resolve_with_choice
+from grebase.rules import resolve_formatting, resolve_imports
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -93,3 +94,67 @@ def test_resolve_with_choice_theirs(tmp_path: Path) -> None:
     file_path.write_text(_load("semantic_conflict.py"), encoding="utf-8")
     assert resolve_with_choice(tmp_path, "sample.py", "theirs") is True
     assert "timeout = 30" in file_path.read_text(encoding="utf-8")
+
+
+def test_resolve_formatting_rejects_indentation_change() -> None:
+    assert resolve_formatting("    x = 1\n", "  x = 1\n") is None
+
+
+def test_resolve_formatting_same_indentation_resolves() -> None:
+    assert resolve_formatting("    x = 1\n", "    x=1\n") is not None
+
+
+def test_resolve_imports_multiline_parens() -> None:
+    current = "from os import (\n    path,\n    getcwd,\n)\n"
+    incoming = "from os import environ\n"
+    result = resolve_imports(current, incoming)
+    assert result is not None
+    assert "path" in result
+    assert "getcwd" in result
+    assert "environ" in result
+    assert result.count("from os import") == 1
+
+
+def test_resolve_imports_multiline_parens_three_names() -> None:
+    current = "from typing import (\n    List,\n    Dict,\n    Optional,\n)\n"
+    incoming = "from typing import Tuple\n"
+    result = resolve_imports(current, incoming)
+    assert result is not None
+    assert all(name in result for name in ["List", "Dict", "Optional", "Tuple"])
+    assert result.count("from typing import") == 1
+
+
+def test_resolve_import_conflict_keeps_star_import(tmp_path: Path) -> None:
+    file_path = tmp_path / "sample.py"
+    file_path.write_text(
+        """<<<<<<< HEAD
+from os import *
+=======
+from os import path
+>>>>>>> main
+""",
+        encoding="utf-8",
+    )
+    config = GrebaseConfig(repo_path=tmp_path, target="origin/main")
+    assert resolve_file(tmp_path, "sample.py", config) is True
+    text = file_path.read_text(encoding="utf-8")
+    assert text.strip() == "from os import *"
+
+
+def test_resolve_import_conflict_places_future_import_first(tmp_path: Path) -> None:
+    file_path = tmp_path / "sample.py"
+    file_path.write_text(
+        """<<<<<<< HEAD
+from __future__ import annotations
+import os
+=======
+from __future__ import annotations
+import sys
+>>>>>>> main
+""",
+        encoding="utf-8",
+    )
+    config = GrebaseConfig(repo_path=tmp_path, target="origin/main")
+    assert resolve_file(tmp_path, "sample.py", config) is True
+    text = file_path.read_text(encoding="utf-8")
+    assert text.startswith("from __future__ import annotations\n")
