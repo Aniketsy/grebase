@@ -21,13 +21,13 @@ def resolve_imports(current: str, incoming: str) -> str | None:
 
     for line in lines:
         if line.startswith("from ") and " import " in line:
-            parts = line.split(" import ", 1)
-            module = parts[0][len("from ") :].strip()
-            names_str = parts[1].strip()
+            split_parts = line.split(" import ", 1)
+            module = split_parts[0][len("from ") :].strip()
+            names_str = split_parts[1].strip()
             # remove surrounding parentheses if any
             if names_str.startswith("(") and names_str.endswith(")"):
                 names_str = names_str[1:-1].strip()
-            names = [n.strip() for n in names_str.split(",") if n.strip()]
+            names: set[str] = {n.strip() for n in names_str.split(",") if n.strip()}
             if module not in from_map:
                 from_map[module] = set()
             from_map[module].update(names)
@@ -36,18 +36,18 @@ def resolve_imports(current: str, incoming: str) -> str | None:
                 simple_seen.add(line)
                 simple_order.append(line)
 
-    parts: list[str] = []
-    parts.extend(simple_order)
+    resolved_lines: list[str] = []
+    resolved_lines.extend(simple_order)
     for module, names in from_map.items():
         if not names:
             continue
         # deterministic ordering
         ordered_names = sorted(names)
-        parts.append(f"from {module} import {', '.join(ordered_names)}")
+        resolved_lines.append(f"from {module} import {', '.join(ordered_names)}")
 
-    if not parts:
+    if not resolved_lines:
         return None
-    return "\n".join(parts) + "\n"
+    return "\n".join(resolved_lines) + "\n"
 
 
 def resolve_formatting(current: str, incoming: str) -> str | None:
