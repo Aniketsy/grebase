@@ -23,7 +23,14 @@ LOCKFILES = {
     "pnpm-lock.yaml",
 }
 
-DOC_EXTENSIONS = {".md", ".rst", ".txt", ".adoc"}
+DOC_EXTENSIONS = {".md", ".rst", ".adoc", ".txt"}
+
+# Explicit dependency files that should be treated as semantic (not docs)
+DEPENDENCY_FILES = {
+    "requirements.txt",
+    "requirements-dev.txt",
+    "constraints.txt",
+}
 
 
 def _is_import_block(text: str) -> bool:
@@ -57,6 +64,8 @@ def classify_conflict(file_path: str, segments: list[Segment]) -> ConflictType:
     path = Path(file_path)
     if path.name in LOCKFILES:
         return ConflictType.LOCKFILE
+    if path.name in DEPENDENCY_FILES:
+        return ConflictType.SEMANTIC
     if path.suffix.lower() in DOC_EXTENSIONS:
         return ConflictType.DOCUMENTATION
 
