@@ -64,6 +64,7 @@ def test_resolve_lockfile_conflict_runs_regen(
     file_path.write_text(_load("poetry.lock"), encoding="utf-8")
     config = GrebaseConfig(repo_path=tmp_path, target="origin/main")
 
+    monkeypatch.setattr("grebase.conflict_resolver.is_tool_available", lambda *_: True)
     monkeypatch.setattr("grebase.conflict_resolver.regenerate_lockfile", lambda *_: True)
     assert resolve_file(tmp_path, "poetry.lock", config) is True
 
@@ -75,6 +76,7 @@ def test_resolve_lockfile_conflict_fails_when_regen_fails(
     file_path.write_text(_load("poetry.lock"), encoding="utf-8")
     config = GrebaseConfig(repo_path=tmp_path, target="origin/main")
 
+    monkeypatch.setattr("grebase.conflict_resolver.is_tool_available", lambda *_: True)
     monkeypatch.setattr("grebase.conflict_resolver.regenerate_lockfile", lambda *_: False)
     assert resolve_file(tmp_path, "poetry.lock", config) is False
 

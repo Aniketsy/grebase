@@ -79,16 +79,19 @@ grebase applies deterministic rules. It never guesses at logic — if a conflict
 | **Whitespace / formatting** | Takes the non-whitespace version silently |
 | **Documentation** | Safely merges when both sides only change docs |
 | **Duplicate inserts** | Deduplicates identical blocks |
-| **Lockfiles** | Regenerates using the right package manager |
+| **Lockfiles** | Strips conflict markers, regenerates safely (`poetry lock --no-update`, `npm install`). Skips if yarn merge driver is detected. Asks confirmation in interactive mode. |
 
 **Lockfile regeneration** — grebase runs the correct tool automatically:
 
 ```
-poetry.lock       → poetry lock
+poetry.lock       → poetry lock --no-update   # preserves existing versions
 Pipfile.lock      → pipenv lock
-package-lock.json → npm ci
-yarn.lock         → yarn install
+package-lock.json → npm install
+yarn.lock         → yarn install              # skipped if merge driver detected
 pnpm-lock.yaml    → pnpm install
+
+> After any lockfile regeneration, review what changed with `git diff -- <lockfile>`.
+> Package versions may change. Use `--safe-only` to skip lockfiles entirely.
 ```
 
 If the tool isn't installed or fails, grebase falls back to prompting you.
@@ -124,6 +127,7 @@ $ grebase main
 - **Always abortable.** `Ctrl+C` or `grebase --abort` restores your branch exactly as it was.
 - **Audit trail.** `--audit` logs every decision to `.git/grebase.log`.
 - **Dry-run first.** `--dry-run` shows exactly what would happen before touching anything.
+- **Lockfiles are never silently regenerated.** In interactive mode grebase asks for confirmation before touching any lockfile. Use `--safe-only` to skip them entirely.
 
 ---
 
