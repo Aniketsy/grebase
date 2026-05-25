@@ -40,7 +40,13 @@ def _rejoin_multiline_imports(lines: list[str]) -> list[str]:
     return result
 
 
-def resolve_imports(current: str, incoming: str) -> str | None:
+def resolve_imports(current: str, incoming: str, base: str | None = None) -> str | None:
+    intentionally_removed: set[str] = set()
+    if base is not None:
+        base_imports = set(normalize_lines(base))
+        incoming_imports = set(normalize_lines(incoming))
+        intentionally_removed = base_imports - incoming_imports
+
     raw_lines = normalize_lines(current) + normalize_lines(incoming)
     lines = _rejoin_multiline_imports(raw_lines)
     # preserve order for plain imports and `from ... import ...` groups separately
@@ -51,6 +57,8 @@ def resolve_imports(current: str, incoming: str) -> str | None:
     from_map: OrderedDict[str, ImportGroup] = OrderedDict()
 
     for line in lines:
+        if line in intentionally_removed:
+            continue
         if line.startswith("from __future__ import "):
             if line not in simple_seen:
                 simple_seen.add(line)
