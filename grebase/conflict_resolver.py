@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 from rich.console import Console
@@ -26,10 +27,27 @@ SAFE_TYPES = {
 }
 
 
-def resolve_file(repo_path: Path, file_path: str, config: GrebaseConfig) -> bool:
+def _validate_syntax(file_path: Path) -> tuple[bool, str]:
+    if file_path.suffix not in {".py", ".pyw"}:
+        return True, ""
+    try:
+        source = file_path.read_text(encoding="utf-8", errors="replace")
+        ast.parse(source)
+        return True, ""
+    except SyntaxError as exc:
+        message = f"line {exc.lineno}: {exc.msg}" if exc.lineno else exc.msg
+        return False, message
+
+
+def resolve_file(
+    repo_path: Path,
+    file_path: str,
+    config: GrebaseConfig,
+    base_content: str | None = None,
+) -> bool:
     full_path = repo_path / file_path
-    text = full_path.read_text(encoding="utf-8")
-    segments = parse_conflict_segments(text)
+    original_text = full_path.read_text(encoding="utf-8")
+    segments = parse_conflict_segments(original_text)
     conflict_type = classify_conflict(file_path, segments)
 
     if conflict_type == ConflictType.LOCKFILE:
@@ -65,7 +83,7 @@ def resolve_file(repo_path: Path, file_path: str, config: GrebaseConfig) -> bool
             resolved_parts.append(segment.text)
             continue
         if conflict_type == ConflictType.IMPORTS:
-            resolved = resolve_imports(segment.current, segment.incoming)
+            resolved = resolve_imports(segment.current, segment.incoming, base=base_content)
         elif conflict_type == ConflictType.FORMATTING:
             resolved = resolve_formatting(segment.current, segment.incoming)
         elif conflict_type == ConflictType.DOCUMENTATION:
@@ -81,6 +99,10 @@ def resolve_file(repo_path: Path, file_path: str, config: GrebaseConfig) -> bool
 
     if not config.dry_run:
         full_path.write_text("".join(resolved_parts), encoding="utf-8")
+        valid, _error = _validate_syntax(full_path)
+        if not valid:
+            full_path.write_text(original_text, encoding="utf-8")
+            return False
     return True
 
 
@@ -102,3 +124,34 @@ def resolve_with_choice(repo_path: Path, file_path: str, choice: str) -> bool:
             return False
     full_path.write_text("".join(resolved_parts), encoding="utf-8")
     return True
+
+
+def resolve_with_both(
+    repo_path: Path,
+    file_path: str,
+    mine_first: bool = True,
+) -> tuple[bool, str]:
+    """
+    Concatenate both sides of every conflict in the file.
+    mine_first=True: current then incoming
+    mine_first=False: incoming then current
+    """
+    full_path = repo_path / file_path
+    text = full_path.read_text(encoding="utf-8")
+    segments = parse_conflict_segments(text)
+    resolved_parts: list[str] = []
+
+    for segment in segments:
+        if isinstance(segment, TextSegment):
+            resolved_parts.append(segment.text)
+            continue
+        mine = segment.current.rstrip("\n")
+        theirs = segment.incoming.rstrip("\n")
+        if mine_first:
+            resolved_parts.append(mine + "\n\n" + theirs + "\n")
+        else:
+            resolved_parts.append(theirs + "\n\n" + mine + "\n")
+
+    result = "".join(resolved_parts)
+    full_path.write_text(result, encoding="utf-8")
+    return True, result

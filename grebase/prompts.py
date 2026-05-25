@@ -7,8 +7,11 @@ PROMPT_TEXT = (
     "3. Keep mine (all remaining)\n"
     "4. Keep theirs (all remaining)\n"
     "5. Show diff\n"
-    "6. Skip\n"
-    "7. Abort\n"
+    "6. Keep both - mine first\n"
+    "7. Keep both - theirs first\n"
+    "8. Edit inline\n"
+    "9. Skip\n"
+    "10. Abort\n"
     "> "
 )
 

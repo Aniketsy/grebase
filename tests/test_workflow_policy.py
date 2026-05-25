@@ -25,7 +25,7 @@ def _setup_workflow_mocks(
     monkeypatch.setattr(cli, "status_porcelain", lambda *_: "")
     monkeypatch.setattr(cli, "save_state", lambda *_: None)
     monkeypatch.setattr(cli, "get_conflict_files", lambda *_: next(sequence))
-    monkeypatch.setattr(cli, "resolve_file", lambda *_: False)
+    monkeypatch.setattr(cli, "resolve_file", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(cli, "add_files", lambda *_: None)
     monkeypatch.setattr(cli, "rebase_continue", lambda *_args, **_kwargs: None)
 

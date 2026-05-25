@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from grebase.config import GrebaseConfig
-from grebase.conflict_resolver import resolve_file, resolve_with_choice
+from grebase.conflict_resolver import resolve_file, resolve_with_both, resolve_with_choice
 from grebase.rules import resolve_formatting, resolve_imports
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -124,6 +124,16 @@ def test_resolve_imports_multiline_parens_three_names() -> None:
     assert result.count("from typing import") == 1
 
 
+def test_resolve_imports_respects_intentional_removal() -> None:
+    base = "import os\nimport deprecated_module\n"
+    current = "import os\nimport deprecated_module\n"
+    incoming = "import os\nimport logging\n"
+    result = resolve_imports(current, incoming, base=base)
+    assert result is not None
+    assert "import deprecated_module" not in result
+    assert "import logging" in result
+
+
 def test_resolve_import_conflict_keeps_star_import(tmp_path: Path) -> None:
     file_path = tmp_path / "sample.py"
     file_path.write_text(
@@ -158,3 +168,48 @@ import sys
     assert resolve_file(tmp_path, "sample.py", config) is True
     text = file_path.read_text(encoding="utf-8")
     assert text.startswith("from __future__ import annotations\n")
+
+
+def test_resolve_with_both_mine_first(tmp_path: Path) -> None:
+    file_path = tmp_path / "api.py"
+    file_path.write_text(
+        "class A:\n<<<<<<< HEAD\n    def theirs(self): pass\n=======\n"
+        "    def mine(self): pass\n>>>>>>> main\n",
+        encoding="utf-8",
+    )
+    ok, preview = resolve_with_both(tmp_path, "api.py", mine_first=True)
+    assert ok
+    result = file_path.read_text(encoding="utf-8")
+    mine_pos = result.index("def mine")
+    theirs_pos = result.index("def theirs")
+    assert mine_pos < theirs_pos
+    assert "<<<<<<<" not in result
+    assert preview == result
+
+
+def test_resolve_with_both_theirs_first(tmp_path: Path) -> None:
+    file_path = tmp_path / "api.py"
+    file_path.write_text(
+        "class A:\n<<<<<<< HEAD\n    def theirs(self): pass\n=======\n"
+        "    def mine(self): pass\n>>>>>>> main\n",
+        encoding="utf-8",
+    )
+    ok, preview = resolve_with_both(tmp_path, "api.py", mine_first=False)
+    assert ok
+    result = file_path.read_text(encoding="utf-8")
+    mine_pos = result.index("def mine")
+    theirs_pos = result.index("def theirs")
+    assert theirs_pos < mine_pos
+    assert "<<<<<<<" not in result
+    assert preview == result
+
+
+def test_resolve_with_both_blank_line_separator(tmp_path: Path) -> None:
+    file_path = tmp_path / "api.py"
+    file_path.write_text(
+        "<<<<<<< HEAD\n    def theirs(self): pass\n=======\n"
+        "    def mine(self): pass\n>>>>>>> main\n",
+        encoding="utf-8",
+    )
+    _, preview = resolve_with_both(tmp_path, "api.py", mine_first=True)
+    assert "\n\n" in preview

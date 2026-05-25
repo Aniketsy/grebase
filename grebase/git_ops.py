@@ -139,6 +139,31 @@ def diff_stat_range(repo_path: Path, base_ref: str, head_ref: str = "HEAD") -> s
     ).stdout
 
 
+def get_merge_base(repo_path: Path, target: str) -> str | None:
+    result = run_git(["merge-base", "HEAD", target], cwd=repo_path, check=False)
+    return result.stdout.strip() if result.returncode == 0 and result.stdout else None
+
+
+def get_file_at_commit(repo_path: Path, commit_sha: str, file_path: str) -> str | None:
+    result = run_git(["show", f"{commit_sha}:{file_path}"], cwd=repo_path, check=False)
+    return result.stdout if result.returncode == 0 else None
+
+
+def get_commits_for_file(
+    repo_path: Path,
+    since: str,
+    until: str,
+    file_path: str,
+    max_count: int = 5,
+) -> list[str]:
+    result = run_git(
+        ["log", "--oneline", f"-{max_count}", f"{since}..{until}", "--", file_path],
+        cwd=repo_path,
+        check=False,
+    )
+    return result.stdout.strip().splitlines() if result.stdout.strip() else []
+
+
 def last_commit_for_file(repo_path: Path, file_path: str) -> str:
     result = run_git(
         ["log", "-1", "--pretty=%h %s", "--", file_path],
