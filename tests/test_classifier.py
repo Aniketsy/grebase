@@ -55,3 +55,20 @@ import React, { useState } from 'react';
 """
     segments = parse_conflict_segments(text)
     assert classify_conflict("App.tsx", segments) == ConflictType.SEMANTIC
+
+
+def test_classifies_multiline_python_imports() -> None:
+    text = """<<<<<<< HEAD
+from myapp.utils import (
+    helper_one,
+    helper_two,
+)
+=======
+from myapp.utils import (
+    helper_one,
+    helper_three,
+)
+>>>>>>> main
+"""
+    segments = parse_conflict_segments(text)
+    assert classify_conflict("sample.py", segments) == ConflictType.IMPORTS

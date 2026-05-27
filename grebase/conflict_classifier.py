@@ -4,6 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from .conflict_parser import ConflictSegment, Segment
+from .rules import _rejoin_multiline_imports
 
 
 class ConflictType(str, Enum):
@@ -37,6 +38,7 @@ def _is_import_block(text: str) -> bool:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if not lines:
         return False
+    lines = _rejoin_multiline_imports(lines)
     for line in lines:
         parts = line.split()
         if not parts or parts[0] not in {"import", "from"}:
@@ -60,6 +62,16 @@ def _is_formatting_only(current: str, incoming: str) -> bool:
 
 def _is_duplicate(current: str, incoming: str) -> bool:
     return _normalize(current) == _normalize(incoming)
+
+
+def classify_segment(segment: ConflictSegment) -> ConflictType:
+    if _is_import_block(segment.current) and _is_import_block(segment.incoming):
+        return ConflictType.IMPORTS
+    if _is_duplicate(segment.current, segment.incoming):
+        return ConflictType.DUPLICATE
+    if _is_formatting_only(segment.current, segment.incoming):
+        return ConflictType.FORMATTING
+    return ConflictType.SEMANTIC
 
 
 def classify_conflict(file_path: str, segments: list[Segment]) -> ConflictType:
