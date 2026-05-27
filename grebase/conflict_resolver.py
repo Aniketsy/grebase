@@ -6,7 +6,7 @@ from pathlib import Path
 from rich.console import Console
 
 from .config import GrebaseConfig
-from .conflict_classifier import ConflictType, classify_conflict
+from .conflict_classifier import ConflictType, classify_conflict, classify_segment
 from .conflict_parser import TextSegment, parse_conflict_segments
 from .lockfile_tools import (
     get_lockfile_command,
@@ -78,30 +78,45 @@ def resolve_file(
         return False
 
     resolved_parts: list[str] = []
-    for segment in segments:
-        if isinstance(segment, TextSegment):
-            resolved_parts.append(segment.text)
-            continue
-        if conflict_type == ConflictType.IMPORTS:
-            resolved = resolve_imports(segment.current, segment.incoming, base=base_content)
-        elif conflict_type == ConflictType.FORMATTING:
-            resolved = resolve_formatting(segment.current, segment.incoming)
-        elif conflict_type == ConflictType.DOCUMENTATION:
+    if conflict_type == ConflictType.DOCUMENTATION:
+        for segment in segments:
+            if isinstance(segment, TextSegment):
+                resolved_parts.append(segment.text)
+                continue
             resolved = resolve_docs(segment.current, segment.incoming)
-        elif conflict_type == ConflictType.DUPLICATE:
-            resolved = resolve_duplicate(segment.current, segment.incoming)
-        else:
-            resolved = None
+            if resolved is None:
+                return False
+            resolved_parts.append(resolved)
+    else:
+        for segment in segments:
+            if isinstance(segment, TextSegment):
+                resolved_parts.append(segment.text)
+                continue
+            segment_type = classify_segment(segment)
+            if segment_type == ConflictType.SEMANTIC:
+                return False
+            if segment_type == ConflictType.IMPORTS:
+                resolved = resolve_imports(segment.current, segment.incoming, base=base_content)
+            elif segment_type == ConflictType.FORMATTING:
+                resolved = resolve_formatting(segment.current, segment.incoming)
+            elif segment_type == ConflictType.DUPLICATE:
+                resolved = resolve_duplicate(segment.current, segment.incoming)
+            else:
+                resolved = None
 
-        if resolved is None:
-            return False
-        resolved_parts.append(resolved)
+            if resolved is None:
+                return False
+            resolved_parts.append(resolved)
 
     if not config.dry_run:
         full_path.write_text("".join(resolved_parts), encoding="utf-8")
-        valid, _error = _validate_syntax(full_path)
+        valid, error_msg = _validate_syntax(full_path)
         if not valid:
             full_path.write_text(original_text, encoding="utf-8")
+            console.print(
+                f"[yellow]![/yellow] Auto-resolve produced invalid syntax in {file_path} "
+                f"({error_msg}) - falling back to manual resolution"
+            )
             return False
     return True
 

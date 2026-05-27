@@ -181,7 +181,9 @@ class TestClassifierEdgeCases:
 
 class TestResolverEdgeCases:
 
-    def test_syntax_validation_invalid_python_reverts(self, tmp_path: Path) -> None:
+    def test_syntax_validation_invalid_python_reverts(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         # lines 37-39, 104-105: SyntaxError → revert file, return False
         f = tmp_path / "bad.py"
         original = "<<<<<<< HEAD\nfrom os import (\n=======\nfrom os import path\n>>>>>>> main\n"
@@ -190,6 +192,7 @@ class TestResolverEdgeCases:
         result = resolve_file(tmp_path, "bad.py", config)
         assert result is False
         assert f.read_text(encoding="utf-8") == original
+        assert "Auto-resolve produced invalid syntax" in capsys.readouterr().out
 
     def test_safe_only_skips_semantic(self, tmp_path: Path) -> None:
         # line 56: safe_only + not in SAFE_TYPES → return False

@@ -213,3 +213,54 @@ def test_resolve_with_both_blank_line_separator(tmp_path: Path) -> None:
     )
     _, preview = resolve_with_both(tmp_path, "api.py", mine_first=True)
     assert "\n\n" in preview
+
+
+def test_resolve_mixed_import_and_semantic_returns_false(tmp_path: Path) -> None:
+    file_path = tmp_path / "sample.py"
+    original = (
+        "<<<<<<< HEAD\nimport os\n=======\nimport sys\n>>>>>>> main\n"
+        "def f():\n"
+        "<<<<<<< HEAD\n    return 1\n=======\n    return 2\n>>>>>>> main\n"
+    )
+    file_path.write_text(original, encoding="utf-8")
+    config = GrebaseConfig(repo_path=tmp_path, target="origin/main")
+    assert resolve_file(tmp_path, "sample.py", config) is False
+    assert file_path.read_text(encoding="utf-8") == original
+
+
+def test_resolve_multiline_imports_end_to_end(tmp_path: Path) -> None:
+    file_path = tmp_path / "sample.py"
+    file_path.write_text(
+        "<<<<<<< HEAD\nfrom myapp.utils import (\n"
+        "    helper_one,\n"
+        "    helper_two,\n"
+        ")\n"
+        "=======\nfrom myapp.utils import (\n"
+        "    helper_one,\n"
+        "    helper_three,\n"
+        ")\n>>>>>>> main\n",
+        encoding="utf-8",
+    )
+    config = GrebaseConfig(repo_path=tmp_path, target="origin/main")
+    assert resolve_file(tmp_path, "sample.py", config) is True
+    text = file_path.read_text(encoding="utf-8")
+    assert "helper_one" in text
+    assert "helper_two" in text
+    assert "helper_three" in text
+    assert "<<<<<<<" not in text
+
+
+def test_resolve_mixed_import_and_formatting_conflicts(tmp_path: Path) -> None:
+    file_path = tmp_path / "sample.py"
+    file_path.write_text(
+        "<<<<<<< HEAD\nimport os\n=======\nimport sys\n>>>>>>> main\n"
+        "def f():\n"
+        "<<<<<<< HEAD\n    x = 1\n=======\n    x=1\n>>>>>>> main\n",
+        encoding="utf-8",
+    )
+    config = GrebaseConfig(repo_path=tmp_path, target="origin/main")
+    assert resolve_file(tmp_path, "sample.py", config) is True
+    text = file_path.read_text(encoding="utf-8")
+    assert "import os" in text
+    assert "import sys" in text
+    assert "<<<<<<<" not in text
