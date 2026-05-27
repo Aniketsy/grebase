@@ -137,7 +137,11 @@ def test_rebase_fails_with_dirty_worktree(tmp_path: Path, monkeypatch: pytest.Mo
         pytest.skip("git not available")
 
     _init_repo(tmp_path)
-    (tmp_path / "dirty.txt").write_text("dirty", encoding="utf-8")
+    dirty_file = tmp_path / "dirty.txt"
+    dirty_file.write_text("clean", encoding="utf-8")
+    _run_git(tmp_path, ["add", "dirty.txt"])
+    _run_git(tmp_path, ["commit", "-m", "add dirty file"])
+    dirty_file.write_text("dirty", encoding="utf-8")
 
     monkeypatch.chdir(tmp_path)
     assert run_workflow(target="main") == 1

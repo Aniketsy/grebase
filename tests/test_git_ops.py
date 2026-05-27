@@ -57,12 +57,14 @@ def test_has_remote(monkeypatch: pytest.MonkeyPatch) -> None:
     assert has_remote(Path.cwd(), remote="missing") is False
 
 
-def test_is_rebase_in_progress(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fake_run_git(*_args: object, **_kwargs: object) -> SimpleNamespace:
-        return SimpleNamespace(stdout="patch", stderr="", returncode=0)
+def test_is_rebase_in_progress(tmp_path: Path) -> None:
+    (tmp_path / ".git" / "rebase-merge").mkdir(parents=True)
+    assert is_rebase_in_progress(tmp_path) is True
 
-    monkeypatch.setattr("grebase.git_ops.run_git", fake_run_git)
-    assert is_rebase_in_progress(Path.cwd()) is True
+
+def test_is_rebase_not_in_progress_with_git_dir(tmp_path: Path) -> None:
+    (tmp_path / ".git").mkdir(parents=True)
+    assert is_rebase_in_progress(tmp_path) is False
 
 
 def test_list_changed_files(monkeypatch: pytest.MonkeyPatch) -> None:
