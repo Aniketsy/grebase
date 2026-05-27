@@ -188,17 +188,29 @@ def run_workflow(
         return "continue"
 
     if continue_flag:
-        rebase_continue(repo_path)
+        try:
+            rebase_continue(repo_path)
+        except GitError as exc:
+            console.print(f"[red]x[/red] {exc}")
+            return 1
         console.print("[green]✓[/green] Rebase continued")
         audit_log("continue", "rebase --continue")
         return 0
     if abort_flag:
-        rebase_abort(repo_path)
+        try:
+            rebase_abort(repo_path)
+        except GitError as exc:
+            console.print(f"[red]x[/red] {exc}")
+            return 1
         console.print("[yellow]![/yellow] Rebase aborted")
         audit_log("abort", "rebase --abort")
         return 0
     if skip_flag:
-        rebase_skip(repo_path)
+        try:
+            rebase_skip(repo_path)
+        except GitError as exc:
+            console.print(f"[red]x[/red] {exc}")
+            return 1
         console.print("[yellow]![/yellow] Rebase skipped")
         audit_log("skip", "rebase --skip")
         return 0
@@ -208,7 +220,9 @@ def run_workflow(
 
     rebase_in_progress = is_rebase_in_progress(repo_path)
 
-    if status_porcelain(repo_path) and not rebase_in_progress:
+    status_output = status_porcelain(repo_path)
+    dirty_lines = [line for line in status_output.splitlines() if not line.startswith("??")]
+    if dirty_lines and not rebase_in_progress:
         console.print("[yellow]![/yellow] Working tree not clean. Commit or stash changes first.")
         return 1
 
@@ -400,10 +414,12 @@ def run_workflow(
                         return 1
                     break
                 if action == "9":
+                    # Guarded by git_ops; this path only runs during an active rebase.
                     rebase_skip(repo_path)
                     audit_log("skip", "rebase --skip")
                     return 2
                 if action == "10":
+                    # Guarded by git_ops; this path only runs during an active rebase.
                     rebase_abort(repo_path)
                     audit_log("abort", "rebase --abort")
                     return 1

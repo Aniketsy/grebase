@@ -79,21 +79,27 @@ def rebase(repo_path: Path, target: str) -> GitCommandResult:
 
 
 def rebase_continue(repo_path: Path, allow_editor: bool = True) -> None:
+    if not is_rebase_in_progress(repo_path):
+        raise GitError("No rebase in progress. Run `grebase <target>` to start one.")
     env = None if allow_editor else {"GIT_EDITOR": "true"}
     run_git(["rebase", "--continue"], cwd=repo_path, env=env)
 
 
 def rebase_abort(repo_path: Path) -> None:
+    if not is_rebase_in_progress(repo_path):
+        raise GitError("No rebase in progress. Run `grebase <target>` to start one.")
     run_git(["rebase", "--abort"], cwd=repo_path)
 
 
 def rebase_skip(repo_path: Path) -> None:
+    if not is_rebase_in_progress(repo_path):
+        raise GitError("No rebase in progress. Run `grebase <target>` to start one.")
     run_git(["rebase", "--skip"], cwd=repo_path)
 
 
 def is_rebase_in_progress(repo_path: Path) -> bool:
-    result = run_git(["rebase", "--show-current-patch"], cwd=repo_path, check=False)
-    return result.returncode == 0
+    git_dir = repo_path / ".git"
+    return (git_dir / "rebase-merge").exists() or (git_dir / "rebase-apply").exists()
 
 
 def status_porcelain(repo_path: Path) -> str:

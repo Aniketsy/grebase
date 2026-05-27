@@ -810,6 +810,7 @@ class TestGitOpsAdditionalCases:
         import grebase.git_ops as go
 
         recorded = {}
+        (tmp_path / ".git" / "rebase-merge").mkdir(parents=True)
 
         def fake_run_git(args, cwd, check=True, env=None):
             recorded["env"] = env
@@ -824,11 +825,7 @@ class TestGitOpsAdditionalCases:
     ) -> None:
         import grebase.git_ops as go
 
-        monkeypatch.setattr(
-            go,
-            "run_git",
-            lambda *a, **kw: go.GitCommandResult("", "", 0),
-        )
+        (tmp_path / ".git" / "rebase-merge").mkdir(parents=True)
         assert go.is_rebase_in_progress(tmp_path) is True
 
     def test_is_rebase_in_progress_false(
@@ -836,11 +833,6 @@ class TestGitOpsAdditionalCases:
     ) -> None:
         import grebase.git_ops as go
 
-        monkeypatch.setattr(
-            go,
-            "run_git",
-            lambda *a, **kw: go.GitCommandResult("", "", 1),
-        )
         assert go.is_rebase_in_progress(tmp_path) is False
 
 
@@ -916,6 +908,24 @@ class TestCliAdditionalCases:
         assert run_workflow(skip_flag=True) == 0
         assert called["skip"] == 1
         assert run_workflow(status_flag=True) == 0
+
+    def test_run_workflow_continue_without_rebase(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _setup_cli_defaults(monkeypatch, tmp_path)
+        assert run_workflow(continue_flag=True) == 1
+
+    def test_run_workflow_abort_without_rebase(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _setup_cli_defaults(monkeypatch, tmp_path)
+        assert run_workflow(abort_flag=True) == 1
+
+    def test_run_workflow_skip_without_rebase(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _setup_cli_defaults(monkeypatch, tmp_path)
+        assert run_workflow(skip_flag=True) == 1
 
     def test_run_workflow_dirty_tree_no_rebase(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -1017,7 +1027,7 @@ class TestCliAdditionalCases:
     ) -> None:
         _setup_cli_defaults(monkeypatch, tmp_path)
         conflicts = iter([["f.py"], []])
-        monkeypatch.setattr("grebase.cli.get_conflict_files", lambda *_: next(conflicts))
+        monkeypatch.setattr("grebase.cli.get_conflict_files", lambda *_, **__: next(conflicts))
         monkeypatch.setattr("grebase.cli.resolve_file", lambda *_, **__: False)
         monkeypatch.setattr(
             "grebase.cli.resolve_with_both",
@@ -1030,8 +1040,8 @@ class TestCliAdditionalCases:
         monkeypatch.setattr("grebase.cli.add_files", lambda *_, **__: None)
         monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
         prompts = iter(["y", "y"])
-        monkeypatch.setattr("grebase.cli.pt_prompt", lambda *_: next(prompts))
-        monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda: "6")
+        monkeypatch.setattr("grebase.cli.pt_prompt", lambda *_, **__: next(prompts))
+        monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda *_, **__: "6")
         assert run_workflow(interactive=True) == 0
 
     def test_run_workflow_action_both_theirs_refine_no(
@@ -1039,7 +1049,7 @@ class TestCliAdditionalCases:
     ) -> None:
         _setup_cli_defaults(monkeypatch, tmp_path)
         conflicts = iter([["f.py"], []])
-        monkeypatch.setattr("grebase.cli.get_conflict_files", lambda *_: next(conflicts))
+        monkeypatch.setattr("grebase.cli.get_conflict_files", lambda *_, **__: next(conflicts))
         monkeypatch.setattr("grebase.cli.resolve_file", lambda *_, **__: False)
         monkeypatch.setattr(
             "grebase.cli.resolve_with_both",
@@ -1047,8 +1057,8 @@ class TestCliAdditionalCases:
         )
         monkeypatch.setattr("grebase.cli.add_files", lambda *_, **__: None)
         monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
-        monkeypatch.setattr("grebase.cli.pt_prompt", lambda *_: "n")
-        monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda: "7")
+        monkeypatch.setattr("grebase.cli.pt_prompt", lambda *_, **__: "n")
+        monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda *_, **__: "7")
         assert run_workflow(interactive=True) == 0
 
     def test_run_workflow_action_inline_abort(
