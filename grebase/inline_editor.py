@@ -74,9 +74,9 @@ def inline_edit(
             key_bindings=_make_keybindings(),
             bottom_toolbar=_TOOLBAR,
             style=_STYLE,
-            wrap_lines=False,
+            wrap_lines=True,
         )
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         console.print("\n[yellow]![/yellow] Edit aborted.")
         return None
 
