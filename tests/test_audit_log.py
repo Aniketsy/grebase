@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 import grebase.cli as cli
+from grebase.git_ops import GitCommandResult as _GCR
 
 
 def _setup_audit_mocks(
@@ -32,7 +33,7 @@ def _setup_audit_mocks(
     monkeypatch.setattr(cli, "resolve_file", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(cli, "resolve_with_choice", lambda *_args, **_kwargs: True)
     monkeypatch.setattr(cli, "add_files", lambda *_: None)
-    monkeypatch.setattr(cli, "rebase_continue", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(cli, "rebase_continue", lambda *_args, **_kwargs: _GCR("", "", 0))
 
     return git_dir
 
