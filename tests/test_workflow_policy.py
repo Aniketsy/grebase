@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 import grebase.cli as cli
+from grebase.git_ops import GitCommandResult as _GCR
 
 
 def _setup_workflow_mocks(
@@ -27,7 +28,7 @@ def _setup_workflow_mocks(
     monkeypatch.setattr(cli, "get_conflict_files", lambda *_: next(sequence))
     monkeypatch.setattr(cli, "resolve_file", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(cli, "add_files", lambda *_: None)
-    monkeypatch.setattr(cli, "rebase_continue", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(cli, "rebase_continue", lambda *_args, **_kwargs: _GCR("", "", 0))
 
     captured: list[tuple[str, str]] = []
 

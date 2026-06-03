@@ -78,11 +78,12 @@ def rebase(repo_path: Path, target: str) -> GitCommandResult:
     return run_git(["rebase", target], cwd=repo_path, check=False)
 
 
-def rebase_continue(repo_path: Path, allow_editor: bool = True) -> None:
+def rebase_continue(repo_path: Path, allow_editor: bool = True) -> GitCommandResult:
     if not is_rebase_in_progress(repo_path):
         raise GitError("No rebase in progress. Run `grebase <target>` to start one.")
     env = None if allow_editor else {"GIT_EDITOR": "true"}
-    run_git(["rebase", "--continue"], cwd=repo_path, env=env)
+    # check=False: returncode 1 is expected when the next commit has conflicts.
+    return run_git(["rebase", "--continue"], cwd=repo_path, env=env, check=False)
 
 
 def rebase_abort(repo_path: Path) -> None:

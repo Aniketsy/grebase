@@ -29,6 +29,7 @@ from grebase.conflict_classifier import ConflictType, classify_conflict
 from grebase.conflict_parser import parse_conflict_segments
 from grebase.conflict_resolver import resolve_file, resolve_with_both, resolve_with_choice
 from grebase.exceptions import GitError
+from grebase.git_ops import GitCommandResult as _GCR
 from grebase.inline_editor import (
     _has_conflict_markers,
     _show_diff,
@@ -892,7 +893,7 @@ class TestCliAdditionalCases:
         called = {"continue": 0, "abort": 0, "skip": 0}
         monkeypatch.setattr(
             "grebase.cli.rebase_continue",
-            lambda *_: called.__setitem__("continue", 1),
+            lambda *_: (called.__setitem__("continue", 1) or _GCR("", "", 0)),
         )
         monkeypatch.setattr(
             "grebase.cli.rebase_abort",
@@ -968,7 +969,7 @@ class TestCliAdditionalCases:
         )
         monkeypatch.setattr(
             "grebase.cli.rebase_continue",
-            lambda *_, **__: calls.__setitem__("continue", 1),
+            lambda *_, **__: (calls.__setitem__("continue", 1) or _GCR("", "", 0)),
         )
         assert run_workflow() == 0
         assert calls["add_files"] == 1
@@ -986,7 +987,7 @@ class TestCliAdditionalCases:
             "grebase.cli.add_all_changes",
             lambda *_, **__: calls.__setitem__("add_all", 1),
         )
-        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
+        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: _GCR("", "", 0))
         assert run_workflow() == 0
         assert calls["add_all"] == 1
 
@@ -999,7 +1000,7 @@ class TestCliAdditionalCases:
         monkeypatch.setattr("grebase.cli.resolve_file", lambda *_, **__: False)
         monkeypatch.setattr("grebase.cli.resolve_with_choice", lambda *_, **__: True)
         monkeypatch.setattr("grebase.cli.add_files", lambda *_, **__: None)
-        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
+        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: _GCR("", "", 0))
         assert run_workflow(interactive=False, policy="mine") == 0
 
     def test_run_workflow_noninteractive_prompt_returns_2(
@@ -1022,7 +1023,7 @@ class TestCliAdditionalCases:
         monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda: next(actions))
         monkeypatch.setattr("grebase.cli.resolve_with_choice", lambda *_, **__: True)
         monkeypatch.setattr("grebase.cli.add_files", lambda *_, **__: None)
-        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
+        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: _GCR("", "", 0))
         assert run_workflow(interactive=True) == 0
 
     def test_run_workflow_action_both_mine_refine_yes(
@@ -1041,7 +1042,7 @@ class TestCliAdditionalCases:
             lambda *_, **__: ("orig", "edited"),
         )
         monkeypatch.setattr("grebase.cli.add_files", lambda *_, **__: None)
-        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
+        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: _GCR("", "", 0))
         prompts = iter(["y", "y"])
         monkeypatch.setattr("grebase.cli.pt_prompt", lambda *_, **__: next(prompts))
         monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda *_, **__: "6")
@@ -1059,7 +1060,7 @@ class TestCliAdditionalCases:
             lambda *_, **__: (True, "preview"),
         )
         monkeypatch.setattr("grebase.cli.add_files", lambda *_, **__: None)
-        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
+        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: _GCR("", "", 0))
         monkeypatch.setattr("grebase.cli.pt_prompt", lambda *_, **__: "n")
         monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda *_, **__: "7")
         assert run_workflow(interactive=True) == 0
@@ -1104,5 +1105,5 @@ class TestCliAdditionalCases:
         monkeypatch.setattr("grebase.cli.prompt_conflict_action", lambda: next(actions))
         monkeypatch.setattr("grebase.cli.resolve_with_choice", lambda *_, **__: True)
         monkeypatch.setattr("grebase.cli.add_files", lambda *_, **__: None)
-        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: None)
+        monkeypatch.setattr("grebase.cli.rebase_continue", lambda *_, **__: _GCR("", "", 0))
         assert run_workflow(interactive=True) == 0

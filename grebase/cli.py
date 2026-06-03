@@ -189,9 +189,13 @@ def run_workflow(
 
     if continue_flag:
         try:
-            rebase_continue(repo_path)
+            result = rebase_continue(repo_path)
         except GitError as exc:
             console.print(f"[red]x[/red] {exc}")
+            return 1
+        if result.returncode not in (0, 1):
+            error_detail = result.stderr or "git rebase --continue failed"
+            console.print(f"[red]x[/red] {error_detail}")
             return 1
         console.print("[green]✓[/green] Rebase continued")
         audit_log("continue", "rebase --continue")
@@ -430,7 +434,15 @@ def run_workflow(
                 add_all_changes(repo_path)
             else:
                 add_files(repo_path, resolved_files)
-            rebase_continue(repo_path, allow_editor=config.interactive)
+            try:
+                result = rebase_continue(repo_path, allow_editor=config.interactive)
+            except GitError as exc:
+                console.print(f"[red]x[/red] git rebase --continue failed: {exc}")
+                return 1
+            if result.returncode not in (0, 1):
+                error_detail = result.stderr or "git rebase --continue failed"
+                console.print(f"[red]x[/red] {error_detail}")
+                return 1
 
     return 0
 
