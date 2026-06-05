@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import difflib
 from pathlib import Path
 
@@ -28,6 +29,17 @@ _TOOLBAR = HTML(
 
 def _has_conflict_markers(text: str) -> bool:
     return "<<<<<<<" in text
+
+
+def _check_python_syntax(file_path: Path, text: str) -> tuple[bool, str]:
+    if file_path.suffix not in {".py", ".pyw", ".pyi"}:
+        return True, ""
+    try:
+        ast.parse(text)
+        return True, ""
+    except SyntaxError as exc:
+        message = f"line {exc.lineno}: {exc.msg}" if exc.lineno else exc.msg
+        return False, message
 
 
 def _make_keybindings() -> KeyBindings:
@@ -112,6 +124,15 @@ def edit_and_validate(
         if _has_conflict_markers(edited):
             console.print(
                 "[red]x[/red] Conflict markers still present (<<<<<<< found). " "Re-opening editor."
+            )
+            current_content = edited
+            continue
+
+        valid, error_msg = _check_python_syntax(file_path, edited)
+        if not valid:
+            console.print(
+                f"[red]x[/red] Invalid Python syntax in {file_path.name} ({error_msg}). "
+                "Re-opening editor."
             )
             current_content = edited
             continue
