@@ -508,11 +508,30 @@ class TestGitOpsEdgeCases:
         from grebase.git_ops import get_default_remote_branch as get_default_branch
 
         def fake_run_git(args, **kwargs):
-            raise go.GitError("no remote HEAD")
+            if args[0] == "symbolic-ref":
+                raise go.GitError("no remote HEAD")
+            return go.GitCommandResult("", "", 0)
 
         monkeypatch.setattr(go, "run_git", fake_run_git)
         result = get_default_branch(tmp_path, "origin")
         assert result == "main"
+
+    def test_get_default_branch_prefers_master_when_present(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import grebase.git_ops as go
+        from grebase.git_ops import get_default_remote_branch as get_default_branch
+
+        def fake_run_git(args, **kwargs):
+            if args[0] == "symbolic-ref":
+                raise go.GitError("no remote HEAD")
+            if args[0] == "ls-remote" and args[-1] == "master":
+                return go.GitCommandResult("abc\trefs/heads/master", "", 0)
+            return go.GitCommandResult("", "", 0)
+
+        monkeypatch.setattr(go, "run_git", fake_run_git)
+        result = get_default_branch(tmp_path, "origin")
+        assert result == "master"
 
     def test_get_commits_for_file_returns_empty_on_no_output(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
