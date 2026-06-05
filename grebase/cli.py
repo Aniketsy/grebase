@@ -8,13 +8,13 @@ from typing import Optional
 import typer
 from prompt_toolkit import prompt as pt_prompt
 from rich.console import Console
-from .conflict_preview import show_conflict_preview
 
 from .audit_log import append_audit
 from .branch_detector import detect_target_branch, select_remote
 from .config import GrebaseConfig
 from .conflict_classifier import LOCKFILES
 from .conflict_detector import get_conflict_files
+from .conflict_preview import show_conflict_preview
 from .conflict_resolver import resolve_file, resolve_with_both, resolve_with_choice
 from .exceptions import GitError
 from .git_ops import (
