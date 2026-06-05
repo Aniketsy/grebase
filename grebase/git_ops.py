@@ -56,7 +56,18 @@ def get_default_remote_branch(repo_path: Path, remote: str = "origin") -> str:
         result = run_git(["symbolic-ref", f"refs/remotes/{remote}/HEAD"], cwd=repo_path)
         return result.stdout.replace(f"refs/remotes/{remote}/", "")
     except GitError:
-        return "main"
+        pass
+
+    for branch in ("master", "main"):
+        result = run_git(
+            ["ls-remote", "--heads", remote, branch],
+            cwd=repo_path,
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return branch
+
+    return "main"
 
 
 def fetch(repo_path: Path, remote: str = "origin") -> None:
