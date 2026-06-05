@@ -80,3 +80,36 @@ def test_inline_edit_uses_wrap_lines_true(tmp_path: Path) -> None:
         inline_edit(file_path)
     _, kwargs = mocked.call_args
     assert kwargs["wrap_lines"] is True
+
+
+def test_rejects_broken_python_and_retries(tmp_path: Path) -> None:
+    file_path = tmp_path / "app.py"
+    file_path.write_text("x = 1\n", encoding="utf-8")
+    broken = "def foo(\n    x = 1\n"
+    clean = "def foo():\n    return 42\n"
+    with patch("grebase.inline_editor.inline_edit", side_effect=[broken, clean]):
+        result = edit_and_validate(file_path)
+    assert result is not None
+    _, edited = result
+    assert edited == clean
+
+
+def test_valid_python_passes_through(tmp_path: Path) -> None:
+    file_path = tmp_path / "app.py"
+    file_path.write_text("x = 1\n", encoding="utf-8")
+    with patch(
+        "grebase.inline_editor.inline_edit",
+        return_value="def foo():\n    return 42\n",
+    ):
+        assert edit_and_validate(file_path) is not None
+
+
+def test_non_python_skips_syntax_check(tmp_path: Path) -> None:
+    file_path = tmp_path / "app.ts"
+    file_path.write_text("const x = 1;\n", encoding="utf-8")
+    ts_invalid_as_python = "const x: number => x * 2;\n"
+    with patch(
+        "grebase.inline_editor.inline_edit",
+        return_value=ts_invalid_as_python,
+    ):
+        assert edit_and_validate(file_path) is not None

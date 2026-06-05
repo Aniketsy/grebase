@@ -8,6 +8,7 @@ from typing import Optional
 import typer
 from prompt_toolkit import prompt as pt_prompt
 from rich.console import Console
+from .conflict_preview import show_conflict_preview
 
 from .audit_log import append_audit
 from .branch_detector import detect_target_branch, select_remote
@@ -334,7 +335,18 @@ def run_workflow(
                         console.print(f"  [dim]{commit_line}[/dim]")
             if last_commit:
                 console.print(f"[blue]i[/blue] Last change: {last_commit}")
-            console.print("[blue]i[/blue] Choose how to resolve. If unsure, use Show diff.")
+            try:
+                conflict_text = (repo_path / conflict_file).read_text(
+                    encoding="utf-8",
+                    errors="replace",
+                )
+            except OSError:
+                conflict_text = None
+            if conflict_text is not None:
+                show_conflict_preview(repo_path / conflict_file, conflict_text)
+            console.print(
+                "[blue]i[/blue] Choose how to resolve. Use Show diff for full file context."
+            )
 
             while True:
                 action: str | None = None
